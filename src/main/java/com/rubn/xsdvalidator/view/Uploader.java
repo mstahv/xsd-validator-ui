@@ -19,7 +19,7 @@ public class Uploader extends Upload {
     }
 
     /**
-     * Configure the uploader
+     * Configure the uploader<
      */
     private void uploadInitialConfig() {
         super.setDropAllowed(true);

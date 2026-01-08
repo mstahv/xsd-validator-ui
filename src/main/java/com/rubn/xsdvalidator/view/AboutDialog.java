@@ -3,7 +3,7 @@ package com.rubn.xsdvalidator.view;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.vaadin.firitin.components.RichText;
 
@@ -12,10 +12,10 @@ public class AboutDialog extends Dialog {
     public AboutDialog() {
         super.addClassName("about-dialog");
 
-        final Button closeButton = new Button(new Icon("lumo", "cross"));
+        final Button closeButton = new Button(VaadinIcon.CLOSE.create());
         closeButton.setTooltipText("Close");
         closeButton.addClassName(LumoUtility.Margin.Left.AUTO);
-        closeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL);
         closeButton.addClickListener(e -> close());
         super.getHeader().add(closeButton);
 
