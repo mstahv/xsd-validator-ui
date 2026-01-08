@@ -7,6 +7,7 @@
 @import url("./styles/about.css");
 
 html {
+  --lumo-font-family: 'Arimo', sans-serif;
   --custom-box-shadow: 0 2px 1px -1px rgba(0, 0, 0, .2), 0 1px 1px 0 rgba(0, 0, 0, .14), 0 1px 3px 0 rgba(0, 0, 0, .12);
   --custom-image-shadow: rgba(0, 0, 0, 0.2) 0px 4px 8px, rgba(0, 0, 0, 0.19) 0px 6px 20px;
   --red-error-color: rgba(184,5,49,.08);
