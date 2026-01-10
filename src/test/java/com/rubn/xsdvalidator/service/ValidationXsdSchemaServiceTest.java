@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.service;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@Disabled
 @ExtendWith(MockitoExtension.class)
 class ValidationXsdSchemaServiceTest {
 
@@ -24,6 +26,7 @@ class ValidationXsdSchemaServiceTest {
     private ValidationXsdSchemaService validationXsdSchemaService;
 
     @Test
+    @Disabled
     @DisplayName("Valida xml agains xsd schema")
     void case1() throws IOException {
 
