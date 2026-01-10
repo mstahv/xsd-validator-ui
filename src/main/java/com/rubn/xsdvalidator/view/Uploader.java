@@ -28,10 +28,10 @@ public class Uploader extends Upload {
 
         super.setAcceptedFileTypes(MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, ".xml", ".xsd", ".7z", ".rar", ".zip");
         super.setUploadButton(this.uploadComponent);
-        super.setDropLabel(new Span("Drop files here, only support: [xml, xsd, zip, 7z.]"));
+        super.setDropLabel(new Span("Drop files here, only support: [xml, xsd, zip, rar, 7z.]"));
         super.setDropLabelIcon(new Span());
         super.addFileRejectedListener(event -> {
-            String errorMessage = "Incorrect file type, only support [xml, xsd, zip, 7z.]";
+            String errorMessage = "Incorrect file type, only support [xml, xsd, zip, rar, 7z.]";
             Notification notification = Notification.show(errorMessage, 2000,
                     Notification.Position.MIDDLE);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
