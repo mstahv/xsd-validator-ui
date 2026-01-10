@@ -1,24 +1,33 @@
 package com.rubn.xsdvalidator.service;
 
-import com.github.junrar.Archive;
-import com.github.junrar.exception.RarException;
-import com.github.junrar.rarfile.FileHeader;
 import com.rubn.xsdvalidator.SupportFilesEnum;
 import com.rubn.xsdvalidator.records.DecompressedFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
-import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FastByteArrayOutputStream;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -35,9 +44,9 @@ public class DecompressionService {
         String extension = getFileExtension(fileName).toLowerCase();
         SupportFilesEnum supportFilesEnum = SupportFilesEnum.fromExtension(extension);
         return switch (supportFilesEnum) {
-            case ZIP -> decompressZip(inputStream);
-            case RAR -> decompressRar(inputStream);
-            case FILE_7Z -> decompress7z(inputStream);
+            case ZIP -> this.decompressZip(inputStream);
+            case RAR -> this.decompressRar(inputStream);
+            case FILE_7Z -> this.decompress7z(inputStream);
             default -> throw new IllegalArgumentException("Formato no soportado: " + extension);
         };
     }
@@ -64,43 +73,76 @@ public class DecompressionService {
         return files;
     }
 
+    public Map<InputStream, String> extract(String filePath, String password) throws IOException {
+        Map<InputStream, String> extractedMap = new ConcurrentHashMap<>();
+
+        RandomAccessFile randomAccessFile = new RandomAccessFile(filePath, "r");
+        RandomAccessFileInStream randomAccessFileStream = new RandomAccessFileInStream(randomAccessFile);
+        IInArchive inArchive = SevenZip.openInArchive(null, randomAccessFileStream);
+
+        for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+            if (!item.isFolder()) {
+                ExtractOperationResult result = item.extractSlow(data -> {
+                    extractedMap.put(new BufferedInputStream(new ByteArrayInputStream(data)), item.getPath());
+
+                    return data.length;
+                }, password);
+
+                if (result != ExtractOperationResult.OK) {
+                    throw new RuntimeException(String.format("Error extracting archive. Extracting error: %s", result));
+                }
+            }
+        }
+
+        return extractedMap;
+    }
+
     /**
      * Descomprime archivos RAR
+     * <a href="https://stackoverflow.com/a/74223706/7267818">...</a>
      */
     public List<DecompressedFile> decompressRar(InputStream inputStream) throws IOException {
-        List<DecompressedFile> files = new ArrayList<>();
+        List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
-        // RAR necesita un archivo temporal porque la biblioteca no soporta streams directamente
-        Path tempFile = Files.createTempFile("temp_rar_", ".rar");
-
+        Path tempFile = this.toTempFile(inputStream, "tempRarArchive-", ".rar");
         try {
-            // Guardar el stream en archivo temporal
-            Files.copy(inputStream, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            try (RandomAccessFile raf = new RandomAccessFile(tempFile.toFile(), "r")) {// open for reading
+                try (IInArchive inArchive = SevenZip.openInArchive(null, // autodetect archive type
+                        new RandomAccessFileInStream(raf))) {
+                    // Getting simple interface of the archive inArchive
+                    ISimpleInArchive simpleInArchive = inArchive.getSimpleInterface();
 
-            // Procesar el RAR
-            try (Archive archive = new Archive(tempFile.toFile())) {
-                FileHeader fileHeader;
+                    for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
+                        if (!item.isFolder()) {
+                            ExtractOperationResult result;
+                            final InputStream[] IS = new InputStream[1];
 
-                while ((fileHeader = archive.nextFileHeader()) != null) {
-                    if (!fileHeader.isDirectory()) {
-                        FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
-                        archive.extractFile(fileHeader, baos);
+                            final Integer[] sizeArray = new Integer[1];
+                            result = item.extractSlow(new ISequentialOutStream() {
+                                /**
+                                 * @param bytes of extracted data
+                                 * @return size of extracted data
+                                 */
+                                @Override
+                                public int write(byte[] bytes) {
+                                    InputStream is = new ByteArrayInputStream(bytes);
+                                    sizeArray[0] = bytes.length;
+                                    IS[0] = new BufferedInputStream(is); // Data to write to file
+                                    return sizeArray[0];
+                                }
+                            });
 
-                        byte[] content = baos.toByteArray();
-                        files.add(new DecompressedFile(
-                                fileHeader.getFileName(),
-                                content,
-                                fileHeader.getUnpSize()
-                        ));
-                        log.info("Descomprimido: {} ({} bytes)",
-                                fileHeader.getFileName(), fileHeader.getUnpSize());
+                            if (result == ExtractOperationResult.OK) {
+                                files.add(new DecompressedFile(Path.of(item.getPath()).getFileName().toString(), this.readAllBytes(IS[0]), sizeArray[0]));
+                            } else {
+                                log.error("Error extracting item: " + result);
+                            }
+                        }
                     }
                 }
-            } catch (RarException e) {
-                throw new RuntimeException(e);
             }
+
         } finally {
-            // Limpiar archivo temporal
             Files.deleteIfExists(tempFile);
         }
 
@@ -108,26 +150,32 @@ public class DecompressionService {
     }
 
     /**
-     * Descomprime archivos 7Z
+     * Descomprime archivos 7z
      */
     public List<DecompressedFile> decompress7z(InputStream inputStream) throws IOException {
-        List<DecompressedFile> files = new ArrayList<>();
+        List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
-        // Leer todo el contenido en memoria
-        byte[] data = inputStream.readAllBytes();
+        Path tempFile = toTempFile(inputStream, "temp_7z_", SupportFilesEnum.FILE_7Z.getSupportFile());
 
-        try (SevenZFile sevenZFile = new SevenZFile(new SeekableInMemoryByteChannel(data))) {
-            SevenZArchiveEntry entry;
+        try {
+            try (SevenZFile sevenZFile = SevenZFile.builder().setPath(tempFile).get()) {
 
-            while ((entry = sevenZFile.getNextEntry()) != null) {
-                if (!entry.isDirectory()) {
-                    byte[] content = new byte[(int) entry.getSize()];
-                    sevenZFile.read(content);
+                SevenZArchiveEntry entry;
 
-                    files.add(new DecompressedFile(entry.getName(), content, entry.getSize()));
-                    log.info("Descomprimido: {} ({} bytes)", entry.getName(), entry.getSize());
+                while ((entry = sevenZFile.getNextEntry()) != null) {
+                    if (!entry.isDirectory()) {
+                        byte[] content = new byte[(int) entry.getSize()];
+                        sevenZFile.read(content);
+
+                        files.add(new DecompressedFile(entry.getName(), content, entry.getSize()));
+                        log.info("Descomprimido: {} ({} bytes)", entry.getName(), entry.getSize());
+                    }
                 }
+            } catch (IOException e) {
+                throw e;
             }
+        } finally {
+            Files.deleteIfExists(tempFile);
         }
 
         return files;
@@ -144,19 +192,27 @@ public class DecompressionService {
     /**
      * Lee todos los bytes de un InputStream sin cerrarlo
      */
-    private byte[] readAllBytes(InputStream is) throws IOException {
+    private byte[] readAllBytes(InputStream inputStream) throws IOException {
         FastByteArrayOutputStream buffer = new FastByteArrayOutputStream();
-        is.transferTo(buffer);
+        inputStream.transferTo(buffer);
         return buffer.toByteArray();
     }
 
     public boolean isCompressedFile(String fileName) {
-        String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+        String extension = this.getFileExtension(fileName);
         SupportFilesEnum supportFilesEnum = SupportFilesEnum.fromExtension(extension);
         return switch (supportFilesEnum) {
             case FILE_7Z, RAR, ZIP -> true;
             case UNKNOWN -> false;
         };
+    }
+
+    public Path toTempFile(InputStream in, String prefix, String subfix) throws IOException {
+        Path tempFile = Files.createTempFile(prefix, subfix);
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFile))) {
+            in.transferTo(out);
+        }
+        return tempFile;
     }
 
 }

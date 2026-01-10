@@ -234,9 +234,9 @@ public class Input extends Layout implements BeforeEnterObserver {
                             byte[] bytes = fastOutputStream.toByteArray();
                             this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
                         }
-                    } catch (IOException error) {
+                    } catch (Exception error) {
                         log.error(error.getMessage());
-                        ConfirmDialogBuilder.showWarning("File transfer failed: " + error.getMessage());
+                        ConfirmDialogBuilder.showWarning("Upload failed: " + error.getMessage());
                     }
                 })
                 .whenStart(() -> {

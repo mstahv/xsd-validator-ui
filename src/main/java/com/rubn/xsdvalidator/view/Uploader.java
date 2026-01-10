@@ -23,16 +23,15 @@ public class Uploader extends Upload {
      */
     private void uploadInitialConfig() {
         super.setDropAllowed(true);
-        super.setMaxFiles(2);
         super.setWidthFull();
         super.addClassNames("upload-xml-xsd", LumoUtility.Padding.XSMALL, LumoUtility.Margin.Right.MEDIUM, LumoUtility.Margin.Left.NONE);
 
         super.setAcceptedFileTypes(MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, ".xml", ".xsd", ".7z", ".rar", ".zip");
         super.setUploadButton(this.uploadComponent);
-        super.setDropLabel(new Span("Drop files here xml and xsd"));
+        super.setDropLabel(new Span("Drop files here, only support: [xml, xsd, zip, 7z.]"));
         super.setDropLabelIcon(new Span());
         super.addFileRejectedListener(event -> {
-            String errorMessage = "Incorrect file type, only xml and xsd";
+            String errorMessage = "Incorrect file type, only support [xml, xsd, zip, 7z.]";
             Notification notification = Notification.show(errorMessage, 2000,
                     Notification.Position.MIDDLE);
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);

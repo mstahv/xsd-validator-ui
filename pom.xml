@@ -95,12 +95,29 @@
             <version>3.1.1</version>
         </dependency>
 
-        <!-- https://github.com/junrar/junrar/releases -->
+        <!-- https://github.com/junrar/junrar/releases
         <dependency>
             <groupId>com.github.junrar</groupId>
             <artifactId>junrar</artifactId>
             <version>7.5.7</version>
+        </dependency>-->
+
+        <!--// Source - https://stackoverflow.com/a/74223706
+        // Posted by Alex A, modified by community. See post 'Timeline' for change history
+        // Retrieved 2026-01-10, License - CC BY-SA 4.0 -->
+
+        <dependency>
+            <groupId>net.sf.sevenzipjbinding</groupId>
+            <artifactId>sevenzipjbinding</artifactId>
+            <version>16.02-2.01</version>
         </dependency>
+
+        <dependency>
+            <groupId>net.sf.sevenzipjbinding</groupId>
+            <artifactId>sevenzipjbinding-all-platforms</artifactId>
+            <version>16.02-2.01</version>
+        </dependency>
+
 
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
         <dependency>
