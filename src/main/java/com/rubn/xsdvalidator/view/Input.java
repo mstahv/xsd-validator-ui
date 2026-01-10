@@ -324,7 +324,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                              DecompressedFile decompressedFile) {
 
         final String fileName = isCompressed ? decompressedFile.fileName() : uploadMetadata.fileName();
-        long contentLength = uploadMetadata.contentLength();
+        long contentLength = isCompressed ? decompressedFile.content().length : uploadMetadata.contentLength();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
         final FileListItem fileListItem = new FileListItem(fileName, contentLength);
         customList.add(fileListItem);
