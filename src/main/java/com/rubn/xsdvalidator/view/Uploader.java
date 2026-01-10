@@ -27,7 +27,7 @@ public class Uploader extends Upload {
         super.setWidthFull();
         super.addClassNames("upload-xml-xsd", LumoUtility.Padding.XSMALL, LumoUtility.Margin.Right.MEDIUM, LumoUtility.Margin.Left.NONE);
 
-        super.setAcceptedFileTypes(MediaType.APPLICATION_XML_VALUE, ".xml", ".xsd");
+        super.setAcceptedFileTypes(MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, ".xml", ".xsd", ".7z", ".rar", ".zip");
         super.setUploadButton(this.uploadComponent);
         super.setDropLabel(new Span("Drop files here xml and xsd"));
         super.setDropLabelIcon(new Span());

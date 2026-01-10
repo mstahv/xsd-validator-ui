@@ -1,5 +1,7 @@
 package com.rubn.xsdvalidator.view;
 
+import com.rubn.xsdvalidator.records.DecompressedFile;
+import com.rubn.xsdvalidator.service.DecompressionService;
 import com.rubn.xsdvalidator.service.ValidationXsdSchemaService;
 import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
 import com.rubn.xsdvalidator.util.Layout;
@@ -81,13 +83,15 @@ public class Input extends Layout implements BeforeEnterObserver {
      * Service
      */
     private final ValidationXsdSchemaService validationXsdSchemaService;
+    private final DecompressionService decompressionService;
     /**
      * Mutable fields
      */
     private Span spanWordError;
 
-    public Input(final ValidationXsdSchemaService validationXsdSchemaService) {
+    public Input(final ValidationXsdSchemaService validationXsdSchemaService, final DecompressionService decompressionService) {
         this.validationXsdSchemaService = validationXsdSchemaService;
+        this.decompressionService = decompressionService;
         addClassName("input-layout");
         // Text area
         verticalLayoutArea = new VerticalLayout();
@@ -221,11 +225,15 @@ public class Input extends Layout implements BeforeEnterObserver {
                     //without buffered, prevent a SAXException
                     try (final InputStream inputStream = new ByteArrayInputStream(data);
                          final FastByteArrayOutputStream fastOutputStream = new FastByteArrayOutputStream()) {
-
-                        inputStream.transferTo(fastOutputStream);
-                        byte[] bytes = fastOutputStream.toByteArray();
-                        this.processFile(metadata, bytes);
-
+                        String fileName = metadata.fileName();
+                        if (this.decompressionService.isCompressedFile(fileName)) {
+                            List<DecompressedFile> files = this.decompressionService.decompressFile(fileName, inputStream);
+                            files.forEach(decompressedFile -> this.processFile(metadata, decompressedFile.content()));
+                        } else {
+                            inputStream.transferTo(fastOutputStream);
+                            byte[] bytes = fastOutputStream.toByteArray();
+                            this.processFile(metadata, bytes);
+                        }
                     } catch (IOException error) {
                         log.error(error.getMessage());
                         ConfirmDialogBuilder.showWarning("File transfer failed: " + error.getMessage());

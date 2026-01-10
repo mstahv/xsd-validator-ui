@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.view;
 
+import com.rubn.xsdvalidator.service.DecompressionService;
 import com.rubn.xsdvalidator.service.ValidationXsdSchemaService;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Main;
@@ -25,12 +26,12 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.COPY_TO_CLIPBOARD
 @JsModule(COPY_TO_CLIPBOARD)
 class XsdValidatorView extends Main {
 
-    public XsdValidatorView(final ValidationXsdSchemaService validationXsdSchemaService) {
+    public XsdValidatorView(final ValidationXsdSchemaService validationXsdSchemaService, DecompressionService decompressionService) {
         setSizeFull();
         getStyle().setOverflow(Style.Overflow.VISIBLE);
 
         add(new ViewToolbar("XSD Validator", ViewToolbar.group(this.createInfoIcon())));
-        add(new Input(validationXsdSchemaService));
+        add(new Input(validationXsdSchemaService, decompressionService));
     }
 
     private Span createInfoIcon() {
