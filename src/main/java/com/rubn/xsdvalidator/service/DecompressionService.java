@@ -52,7 +52,7 @@ public class DecompressionService {
     /**
      * Descomprime archivos ZIP
      */
-    public List<DecompressedFile> decompressZip(InputStream inputStream) throws IOException {
+    private List<DecompressedFile> decompressZip(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
         try (ZipInputStream zis = new ZipInputStream(inputStream)) {
@@ -75,7 +75,7 @@ public class DecompressionService {
      * Descomprime archivos RAR
      * <a href="https://stackoverflow.com/a/74223706/7267818">...</a>
      */
-    public List<DecompressedFile> decompressRar(InputStream inputStream) throws IOException {
+    private List<DecompressedFile> decompressRar(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
         Path tempFile = this.toTempFile(inputStream, "tempRarArchive-", ".rar");
@@ -126,7 +126,7 @@ public class DecompressionService {
     /**
      * Descomprime archivos 7z
      */
-    public List<DecompressedFile> decompress7z(InputStream inputStream) throws IOException {
+    private List<DecompressedFile> decompress7z(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
         Path tempFile = toTempFile(inputStream, "temp_7z_", SupportFilesEnum.FILE_7Z.getSupportFile());
@@ -181,7 +181,7 @@ public class DecompressionService {
         };
     }
 
-    public Path toTempFile(InputStream in, String prefix, String subfix) throws IOException {
+    private Path toTempFile(InputStream in, String prefix, String subfix) throws IOException {
         Path tempFile = Files.createTempFile(prefix, subfix);
         try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(tempFile))) {
             in.transferTo(out);
