@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.service;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,10 @@ class ValidationXsdSchemaServiceTest {
         InputStream inputStream1 = new BufferedInputStream(Files.newInputStream(PAIN_MOCK_PATH));
         InputStream inputStream2 = new BufferedInputStream(Files.newInputStream(XSD_MOCK_PATH));
 
-        Flux<String> listString = validationXsdSchemaService.validateXmlInputWithXsdSchema(inputStream1, inputStream2)
+        byte[] array1 = IOUtils.toByteArray(inputStream1);
+        byte[] array2 = IOUtils.toByteArray(inputStream2);
+
+        Flux<String> listString = validationXsdSchemaService.validateXmlInputWithXsdSchema(array1, array2)
                 .doOnNext(System.out::println);
 
         StepVerifier.create(listString)

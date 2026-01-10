@@ -39,6 +39,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
+import org.springframework.util.FastByteArrayOutputStream;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.ByteArrayInputStream;
@@ -66,7 +68,7 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CL
 @Slf4j
 public class Input extends Layout implements BeforeEnterObserver {
 
-    private final Map<String, InputStream> mapPrefixFileNameAndContent = new ConcurrentHashMap<>();
+    private final Map<String, byte[]> mapPrefixFileNameAndContent = new ConcurrentHashMap<>();
     private final AtomicInteger counterSpanId = new AtomicInteger(0);
     private final List<String> allErrorsList = new CopyOnWriteArrayList<>();
     private final VerticalLayout verticalLayoutArea;
@@ -217,9 +219,12 @@ public class Input extends Layout implements BeforeEnterObserver {
     private InMemoryUploadHandler buildUploadHandler() {
         return UploadHandler.inMemory((metadata, data) -> {
                     //without buffered, prevent a SAXException
-                    try (final InputStream inputStream = new ByteArrayInputStream(data)) {
+                    try (final InputStream inputStream = new ByteArrayInputStream(data);
+                         final FastByteArrayOutputStream fastOutputStream = new FastByteArrayOutputStream()) {
 
-                        this.processFile(metadata, inputStream);
+                        inputStream.transferTo(fastOutputStream);
+                        byte[] bytes = fastOutputStream.toByteArray();
+                        this.processFile(metadata, bytes);
 
                     } catch (IOException error) {
                         log.error(error.getMessage());
@@ -241,20 +246,26 @@ public class Input extends Layout implements BeforeEnterObserver {
         String xmlFileName = sortedNamesByExtension[0];
         String xsdSchemaFileName = sortedNamesByExtension[1];
 
-        InputStream inputXml = mapPrefixFileNameAndContent.get(xmlFileName);
-        InputStream inputXsdSchema = mapPrefixFileNameAndContent.get(xsdSchemaFileName);
+        byte[] inputXml = this.mapPrefixFileNameAndContent.get(xmlFileName);
+        byte[] inputXsdSchema = this.mapPrefixFileNameAndContent.get(xsdSchemaFileName);
 
         this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema)
+                .switchIfEmpty(Mono.defer(() -> {
+                    this.executeUI(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
+                    return Mono.empty();
+                }))
                 .doOnError(onError -> {
                     this.executeUI(() -> {
 //                        log.error("Error validating: {}", xmlFileName, onError);
                         ConfirmDialogBuilder.showWarning("Validation error " + onError.getLocalizedMessage());
                         this.buildErrorSpanAndUpdate(onError.getLocalizedMessage());
-                        this.resetInputStream();
                     });
                 })
                 .delayElements(Duration.ofMillis(50), Schedulers.boundedElastic())
-                .doOnTerminate(() -> this.executeUI(this::resetInputStream))
+                .doOnTerminate(() -> {
+                    log.info("Terminated!");
+                    this.executeUI(() -> validateButton.setEnabled(true));
+                })
                 .subscribe(word -> {
                     super.getUI().ifPresent(ui -> {
                         ui.access(() -> {
@@ -262,9 +273,6 @@ public class Input extends Layout implements BeforeEnterObserver {
 //                                log.info(word);
                                 this.buildErrorSpanAndUpdate(word);
                                 this.anchorDownloadErrors.setEnabled(!allErrorsList.isEmpty());
-                            } else {
-                                ConfirmDialogBuilder.showInformation("Validation successful");
-                                this.resetInputStream();
                             }
                         });
                     });
@@ -304,26 +312,11 @@ public class Input extends Layout implements BeforeEnterObserver {
         return span;
     }
 
-    /**
-     * Nos permite reusar el inputStream cargado en memoria
-     */
-    private void resetInputStream() {
-        mapPrefixFileNameAndContent.forEach((k, v) -> {
-            try {
-                v.reset();
-                validateButton.setEnabled(true);
-            } catch (IOException e) {
-                log.error("resetInputStream {}", e.getMessage());
-            }
-        });
-    }
-
-    private void processFile(final UploadMetadata uploadMetadata, InputStream inputStream) {
+    private void processFile(final UploadMetadata uploadMetadata, byte[] readedBytesFromFile) {
         final String fileName = uploadMetadata.fileName();
         long contentLength = uploadMetadata.contentLength();
-        String content = "Size ⋅ " + contentLength + "KB";
-        mapPrefixFileNameAndContent.put(fileName, inputStream);
-        final FileListItem fileListItem = new FileListItem(fileName, content);
+        mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
+        final FileListItem fileListItem = new FileListItem(fileName, contentLength);
         customList.add(fileListItem);
         ContextMenu contextMenu = this.buildContextMenu(fileListItem);
         contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px"), event -> {
@@ -331,7 +324,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                 ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
                         .addConfirmListener(confirm -> {
                             customList.remove(fileListItem);
-                            mapPrefixFileNameAndContent.remove(fileName, inputStream);
+                            mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
                             this.uploader.clearFileList();
                         });
             });

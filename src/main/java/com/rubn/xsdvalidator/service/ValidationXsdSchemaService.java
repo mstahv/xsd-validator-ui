@@ -14,7 +14,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.BufferedInputStream;
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 @Service
 public class ValidationXsdSchemaService {
 
-    public Flux<String> validateXmlInputWithXsdSchema(final InputStream inputXml, final InputStream inputXsdSchema) {
+    public Flux<String> validateXmlInputWithXsdSchema(final byte[] inputXml, final byte[] inputXsdSchema) {
         return this.loadSchema(inputXsdSchema)
                 .map(Schema::newValidator)
                 .flatMap(this::buildXmlValidatorErrorHandler)
@@ -33,9 +33,9 @@ public class ValidationXsdSchemaService {
                 .flatMapMany(Flux::fromIterable);
     }
 
-    private Mono<Schema> loadSchema(final InputStream inputXsdSchema) {
+    private Mono<Schema> loadSchema(final byte[] inputXsdSchema) {
         final SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        try (var bufferedInputStream = new BufferedInputStream(inputXsdSchema)) {
+        try (var bufferedInputStream = new BufferedInputStream(new ByteArrayInputStream(inputXsdSchema))) {
             return Mono.just(schemaFactory.newSchema(new StreamSource(bufferedInputStream)));
         } catch (Exception ex) {
             return Mono.error(ex);
@@ -48,10 +48,10 @@ public class ValidationXsdSchemaService {
         return Mono.zip(Mono.just(validator), Mono.just(xmlValidationErrorHandler));
     }
 
-    private Mono<List<String>> buildValidator(Tuple2<Validator, XmlValidationErrorHandler> tuple, InputStream inputXml) {
+    private Mono<List<String>> buildValidator(Tuple2<Validator, XmlValidationErrorHandler> tuple, byte[] inputXml) {
         final Validator validator = tuple.getT1();
         final XmlValidationErrorHandler xmlValidationErrorHandler = tuple.getT2();
-        try (var bufferedInputStream = new BufferedInputStream(inputXml)) {
+        try (var bufferedInputStream = new BufferedInputStream(new ByteArrayInputStream(inputXml))) {
             validator.validate(new StreamSource(bufferedInputStream));
             return Mono.just(this.detectWords(xmlValidationErrorHandler.getExceptions()));
         } catch (Exception e) {

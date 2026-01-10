@@ -14,7 +14,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
 public class FileListItem extends ListItem {
 
-    public FileListItem(String prefixFileName, String contentFileSize) {
+    public FileListItem(String prefixFileName, long contentLength) {
         addClassName("file-list-item");
         addClassNames(Background.CONTRAST_5, BorderRadius.LARGE, Padding.Vertical.SMALL, Padding.Horizontal.SMALL);
 
@@ -25,7 +25,9 @@ public class FileListItem extends ListItem {
         tooltip.setText(prefixFileName);
         tooltip.setPosition(Tooltip.TooltipPosition.TOP);
         setPrimary(spanPrefixName);
-        setSecondary(new Span(contentFileSize, FontSize.XXSMALL));
+
+        String content = "Size ⋅ " + contentLength + "KB";
+        setSecondary(new Span(content, FontSize.XXSMALL));
         this.column.removeClassName(Padding.Vertical.XSMALL);
 
         setGap(Layout.Gap.SMALL);
