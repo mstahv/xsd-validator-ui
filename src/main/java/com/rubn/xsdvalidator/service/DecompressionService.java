@@ -26,8 +26,6 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -71,30 +69,6 @@ public class DecompressionService {
         }
 
         return files;
-    }
-
-    public Map<InputStream, String> extract(String filePath, String password) throws IOException {
-        Map<InputStream, String> extractedMap = new ConcurrentHashMap<>();
-
-        RandomAccessFile randomAccessFile = new RandomAccessFile(filePath, "r");
-        RandomAccessFileInStream randomAccessFileStream = new RandomAccessFileInStream(randomAccessFile);
-        IInArchive inArchive = SevenZip.openInArchive(null, randomAccessFileStream);
-
-        for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-            if (!item.isFolder()) {
-                ExtractOperationResult result = item.extractSlow(data -> {
-                    extractedMap.put(new BufferedInputStream(new ByteArrayInputStream(data)), item.getPath());
-
-                    return data.length;
-                }, password);
-
-                if (result != ExtractOperationResult.OK) {
-                    throw new RuntimeException(String.format("Error extracting archive. Extracting error: %s", result));
-                }
-            }
-        }
-
-        return extractedMap;
     }
 
     /**
