@@ -228,11 +228,11 @@ public class Input extends Layout implements BeforeEnterObserver {
                         String fileName = metadata.fileName();
                         if (this.decompressionService.isCompressedFile(fileName)) {
                             List<DecompressedFile> files = this.decompressionService.decompressFile(fileName, inputStream);
-                            files.forEach(decompressedFile -> this.processFile(metadata, decompressedFile.content()));
+                            files.forEach(decompressedFile -> this.processFile(metadata, decompressedFile.content(), true, decompressedFile));
                         } else {
                             inputStream.transferTo(fastOutputStream);
                             byte[] bytes = fastOutputStream.toByteArray();
-                            this.processFile(metadata, bytes);
+                            this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
                         }
                     } catch (IOException error) {
                         log.error(error.getMessage());
@@ -320,8 +320,10 @@ public class Input extends Layout implements BeforeEnterObserver {
         return span;
     }
 
-    private void processFile(final UploadMetadata uploadMetadata, byte[] readedBytesFromFile) {
-        final String fileName = uploadMetadata.fileName();
+    private void processFile(final UploadMetadata uploadMetadata, byte[] readedBytesFromFile, boolean isCompressed,
+                             DecompressedFile decompressedFile) {
+
+        final String fileName = isCompressed ? decompressedFile.fileName() : uploadMetadata.fileName();
         long contentLength = uploadMetadata.contentLength();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
         final FileListItem fileListItem = new FileListItem(fileName, contentLength);

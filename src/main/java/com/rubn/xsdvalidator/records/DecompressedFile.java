@@ -6,11 +6,11 @@ import java.io.InputStream;
 /**
  * @author rubn
  *
- * @param name
+ * @param fileName
  * @param content
  * @param size
  */
-public record DecompressedFile(String name, byte[] content, long size) {
+public record DecompressedFile(String fileName, byte[] content, long size) {
 
     public InputStream getInputStream() {
         return new ByteArrayInputStream(content);
