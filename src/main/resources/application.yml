@@ -30,4 +30,4 @@ spring:
 app:
   app-version: 1.0.28-SNAPSHOT
   browser:
-    auto-open: true
+    auto-open: false

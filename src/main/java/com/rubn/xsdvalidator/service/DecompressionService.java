@@ -152,9 +152,11 @@ public class DecompressionService {
 
     public boolean isCompressedFile(String fileName) {
         String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
-        return extension.equals(SupportFilesEnum.ZIP.getSupportFile())
-                || extension.equals(SupportFilesEnum.RAR.getSupportFile())
-                || extension.equals(SupportFilesEnum.FILE_7Z.getSupportFile());
+        SupportFilesEnum supportFilesEnum = SupportFilesEnum.fromExtension(extension);
+        return switch (supportFilesEnum) {
+            case FILE_7Z, RAR, ZIP -> true;
+            case UNKNOWN -> false;
+        };
     }
 
 }
