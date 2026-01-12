@@ -14,6 +14,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Anchor;
@@ -46,7 +47,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOS_POINTER;
@@ -88,6 +89,7 @@ public class Input extends Layout implements BeforeEnterObserver {
      * Mutable fields
      */
     private Span spanWordError;
+    private String selectedMainXsd;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService, final DecompressionService decompressionService) {
         this.validationXsdSchemaService = validationXsdSchemaService;
@@ -326,8 +328,11 @@ public class Input extends Layout implements BeforeEnterObserver {
         final String fileName = isCompressed ? decompressedFile.fileName() : uploadMetadata.fileName();
         long contentLength = isCompressed ? decompressedFile.content().length : uploadMetadata.contentLength();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
-        final FileListItem fileListItem = new FileListItem(fileName, contentLength);
+
+        // Definimos el comportamiento: Qué pasa cuando ALGUIEN selecciona este item
+        final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);
         customList.add(fileListItem);
+
         ContextMenu contextMenu = this.buildContextMenu(fileListItem);
         contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px"), event -> {
             event.getSource().getUI().ifPresent(ui -> {
@@ -336,9 +341,28 @@ public class Input extends Layout implements BeforeEnterObserver {
                             customList.remove(fileListItem);
                             mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
                             this.uploader.clearFileList();
+                            // Si borramos el que estaba seleccionado, limpiar la variable
+                            if (fileName.equals(this.selectedMainXsd)) {
+                                this.selectedMainXsd = null;
+                            }
                         });
             });
         }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+    }
+
+    private FileListItem buildFileListItem(String fileName, long contentLength) {
+        Consumer<FileListItem> onItemSelected = (selectedItem) -> {
+            this.selectedMainXsd = selectedItem.getFileName();
+            for (Component component : customList.getChildren().toList()) {
+                if (component instanceof FileListItem item) {
+                    if (item != selectedItem) {
+                        item.setSelected(false);
+                    }
+                }
+            }
+        };
+
+        return new FileListItem(fileName, contentLength, onItemSelected);
     }
 
     public ContextMenu buildContextMenu(Component target) {
