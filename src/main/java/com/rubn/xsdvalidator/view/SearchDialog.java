@@ -2,6 +2,7 @@ package com.rubn.xsdvalidator.view;
 
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -11,6 +12,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.theme.lumo.Lumo;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.Comparator;
 import java.util.List;
@@ -27,9 +30,10 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XML;
  */
 public class SearchDialog extends Dialog {
 
+    private final Div divCenterSpanNotSearch = new Div();
     private final MultiSelectListBox<String> listBox = new MultiSelectListBox<>();
     private final Set<String> currentSelection = new ConcurrentSkipListSet<>();
-
+    private final Span spanNotSearchFound = new Span("Item not found!");
     private final List<String> allXsdXmlFiles;
     private final String initialXsdSelection;
     private final String initialXmlSelection;
@@ -41,6 +45,11 @@ public class SearchDialog extends Dialog {
         this.initialXmlSelection = initialXmlSelection;
         addClassName("search-dialog-content");
         setWidth("500px");
+
+        this.divCenterSpanNotSearch.add(spanNotSearchFound);
+        this.divCenterSpanNotSearch.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Height.FULL,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
 
         final TextField searchField = new TextField();
         searchField.setPlaceholder("Filter [xsd, xml]");
@@ -114,6 +123,11 @@ public class SearchDialog extends Dialog {
                     .toList();
         }
         listBox.setItems(itemsToShow);
+        if(itemsToShow.isEmpty()) {
+            listBox.add(this.divCenterSpanNotSearch);
+        } else {
+            listBox.remove(this.divCenterSpanNotSearch);
+        }
         Set<String> selectionToRestore = currentSelection.stream()
                 .filter(itemsToShow::contains)
                 .collect(Collectors.toSet());
