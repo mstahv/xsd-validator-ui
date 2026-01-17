@@ -14,7 +14,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.Anchor;
@@ -52,18 +51,21 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOS_POINTER;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.JS_COMMAND;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.SCROLLBAR_CUSTOM_STYLE;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CLIPBOARD;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XML;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 
 /**
  * @author rubn
@@ -89,6 +91,7 @@ public class Input extends Layout implements BeforeEnterObserver {
      * Mutable fields
      */
     private Span spanWordError;
+    private String selectedXmlFile;
     private String selectedMainXsd;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService, final DecompressionService decompressionService) {
@@ -130,9 +133,12 @@ public class Input extends Layout implements BeforeEnterObserver {
         validateButton.setTooltipText("validate");
         validateButton.setDisableOnClick(true);
         validateButton.addClickListener(event -> {
-            if (!this.checkUploadedFiles()) {
-                ConfirmDialogBuilder.showWarning("Failed to start validation, check uploaded files");
-                validateButton.setEnabled(true);
+            if (Objects.isNull(this.selectedXmlFile) || this.selectedXmlFile.isBlank()) {
+                showMessageFailedToStartValidation();
+                return;
+            }
+            if (Objects.isNull(this.selectedMainXsd) || this.selectedMainXsd.isBlank()) {
+                showMessageFailedToStartValidation();
                 return;
             }
             this.validateXmlInputWithXsdSchema();
@@ -144,9 +150,14 @@ public class Input extends Layout implements BeforeEnterObserver {
         add(divHeader, verticalLayoutArea, actions);
     }
 
+    private void showMessageFailedToStartValidation() {
+        ConfirmDialogBuilder.showWarning("Failed to start validation, check uploaded files...");
+        validateButton.setEnabled(true);
+    }
+
     private MenuBar buildMenuBarOptions() {
         final Button buttonClearAll = new Button(VaadinIcon.ELLIPSIS_V.create());
-        buttonClearAll.getStyle().setCursor(CURSOS_POINTER);
+        buttonClearAll.getStyle().setCursor(CURSOR_POINTER);
         buttonClearAll.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
 
         final MenuBar menuBarGridOptions = new MenuBar();
@@ -161,7 +172,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         itemEllipsis.add(buttonClearAll);
 
         this.anchorDownloadErrors.setClassName("anchor-downloader");
-        anchorDownloadErrors.setHref(DownloadHandler.fromInputStream((event) -> {
+        this.anchorDownloadErrors.setHref(DownloadHandler.fromInputStream((event) -> {
             try {
                 String errors = this.textProcessing();
 //                log.info("Errors menu item: {}", errors);
@@ -182,8 +193,8 @@ public class Input extends Layout implements BeforeEnterObserver {
         }));
 
         final HorizontalLayout rowDownload = this.createRowItemWithIcon("Download errors", VaadinIcon.DOWNLOAD.create(), "18px");
-        anchorDownloadErrors.addComponentAsFirst(rowDownload);
-        itemEllipsis.getSubMenu().addItem(anchorDownloadErrors).addClassNames(MENU_ITEM_NO_CHECKMARK);
+        this.anchorDownloadErrors.addComponentAsFirst(rowDownload);
+        itemEllipsis.getSubMenu().addItem(this.anchorDownloadErrors).addClassNames(MENU_ITEM_NO_CHECKMARK);
 
         SvgIcon svgIcon = SvgFactory.createCopyButtonFromSvg();
         svgIcon.getStyle().setMarginLeft("-5px");
@@ -212,12 +223,14 @@ public class Input extends Layout implements BeforeEnterObserver {
             mapPrefixFileNameAndContent.clear();
             allErrorsList.clear();
             this.counterSpanId.set(0);
-            anchorDownloadErrors.setEnabled(false);
+            this.anchorDownloadErrors.setEnabled(false);
+            this.selectedMainXsd = StringUtils.EMPTY;
+            this.selectedXmlFile = StringUtils.EMPTY;
         }).addClassNames(MENU_ITEM_NO_CHECKMARK, DELETE_MENU_ITEM_NO_CHECKMARK);
 
         itemEllipsis.getSubMenu()
                 .getItems()
-                .forEach(item -> item.getStyle().setCursor(CURSOS_POINTER));
+                .forEach(item -> item.getStyle().setCursor(CURSOR_POINTER));
 
         return menuBarGridOptions;
     }
@@ -249,15 +262,8 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private void validateXmlInputWithXsdSchema() {
-        String[] sortedNamesByExtension = mapPrefixFileNameAndContent.keySet()
-                .stream()
-                .sorted((a, b) -> a.endsWith(".xml") ? -1 : 0)
-                .toArray(String[]::new);
-        String xmlFileName = sortedNamesByExtension[0];
-        String xsdSchemaFileName = sortedNamesByExtension[1];
-
-        byte[] inputXml = this.mapPrefixFileNameAndContent.get(xmlFileName);
-        byte[] inputXsdSchema = this.mapPrefixFileNameAndContent.get(xsdSchemaFileName);
+        byte[] inputXml = this.mapPrefixFileNameAndContent.get(this.selectedXmlFile);
+        byte[] inputXsdSchema = this.mapPrefixFileNameAndContent.get(this.selectedMainXsd);
 
         this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema)
                 .switchIfEmpty(Mono.defer(() -> {
@@ -343,7 +349,10 @@ public class Input extends Layout implements BeforeEnterObserver {
                             this.uploader.clearFileList();
                             // Si borramos el que estaba seleccionado, limpiar la variable
                             if (fileName.equals(this.selectedMainXsd)) {
-                                this.selectedMainXsd = null;
+                                this.selectedMainXsd = StringUtils.EMPTY;
+                            }
+                            if (fileName.equals(this.selectedXmlFile)) {
+                                this.selectedXmlFile = StringUtils.EMPTY;
                             }
                         });
             });
@@ -351,18 +360,47 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private FileListItem buildFileListItem(String fileName, long contentLength) {
-        Consumer<FileListItem> onItemSelected = (selectedItem) -> {
-            this.selectedMainXsd = selectedItem.getFileName();
-            for (Component component : customList.getChildren().toList()) {
-                if (component instanceof FileListItem item) {
-                    if (item != selectedItem) {
-                        item.setSelected(false);
+        BiConsumer<FileListItem, Boolean> onItemSelected = null;
+        String lowerName = fileName.toLowerCase();
+
+        if (lowerName.endsWith(XML)) {
+            onItemSelected = (selectedItem, isChecked) -> {
+                if (isChecked) {
+                    this.selectedXmlFile = selectedItem.getFileName();
+                    this.clearOtherSelections(selectedItem, XML);
+                } else {
+                    if (selectedItem.getFileName().equals(this.selectedXmlFile)) {
+                        this.selectedXmlFile = StringUtils.EMPTY;
                     }
                 }
-            }
-        };
-
+            };
+        } else {
+            onItemSelected = (item, isChecked) -> {
+                if (isChecked) {
+                    this.selectedMainXsd = item.getFileName();
+                    this.clearOtherSelections(item, XSD);
+                } else {
+                    if (item.getFileName().equals(this.selectedMainXsd)) {
+                        this.selectedMainXsd = StringUtils.EMPTY;
+                    }
+                }
+            };
+        }
         return new FileListItem(fileName, contentLength, onItemSelected);
+    }
+
+    /**
+     * Recorre la lista y desmarca los items que no sean el actual
+     * Y que coincidan con la extensión (para no desmarcar XMLs si selecciono XSDs)
+     */
+    private void clearOtherSelections(FileListItem currentItem, String extensionFilter) {
+        customList.getChildren().forEach(component -> {
+            if (component instanceof FileListItem item) {
+                if (item != currentItem && item.isChecked() && item.getFileName().toLowerCase().endsWith(extensionFilter)) {
+                    item.setSelected(false);
+                }
+            }
+        });
     }
 
     public ContextMenu buildContextMenu(Component target) {
@@ -381,18 +419,6 @@ public class Input extends Layout implements BeforeEnterObserver {
         row.add(icon, span);
         row.addClassName(LumoUtility.FontSize.SMALL);
         return row;
-    }
-
-    private boolean checkUploadedFiles() {
-        long xmlCount = mapPrefixFileNameAndContent.keySet()
-                .stream()
-                .filter(k -> k.toLowerCase().endsWith(".xml"))
-                .count();
-        long xsdCount = mapPrefixFileNameAndContent.keySet()
-                .stream()
-                .filter(k -> k.toLowerCase().endsWith(".xsd"))
-                .count();
-        return xmlCount >= 1 && xsdCount >= 1;
     }
 
     private String textProcessing() {

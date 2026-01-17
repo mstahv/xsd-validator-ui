@@ -14,6 +14,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class FileListItem extends ListItem {
@@ -21,18 +22,13 @@ public class FileListItem extends ListItem {
     private final Checkbox checkbox;
     private final String fileName;
 
-    public FileListItem(String prefixFileName, long contentLength, Consumer<FileListItem> onSelectionListener) {
+    public FileListItem(String prefixFileName, long contentLength, BiConsumer<FileListItem, Boolean> onSelectionListener) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
 
-        // 2. Listener: Si este radio se marca, avisamos al padre (onSelectionListener)
         this.checkbox.addValueChangeListener(event -> {
             if (event.getValue()) {
-                // Le pasamos 'this' (este item) al padre para que sepa cuál se seleccionó
-                onSelectionListener.accept(this);
-            } else {
-                // Opcional: Evitar que el usuario desmarque haciendo clic en el mismo
-                // (Comportamiento nativo de radio button: una vez marcado, no se desmarca solo)
+                onSelectionListener.accept(this, event.getValue());
             }
         });
 
@@ -76,10 +72,12 @@ public class FileListItem extends ListItem {
         return fileIcon;
     }
 
-    // Método público para que el padre pueda desmarcar este item
     public void setSelected(boolean selected) {
-        // Usamos setValue(selected) pero evitamos disparar el listener de nuevo para no crear bucles
         this.checkbox.setValue(selected);
+    }
+
+    public boolean isChecked() {
+        return this.checkbox.getValue();
     }
 
     public String getFileName() {

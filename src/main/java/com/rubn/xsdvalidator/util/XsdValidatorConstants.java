@@ -30,7 +30,7 @@ public class XsdValidatorConstants {
     public static final String CONTEXT_MENU_ITEM_NO_CHECKMARK = "context-menu-item-no-checkmark";
     public static final String VAR_CUSTOM_BOX_SHADOW = "var(--custom-box-shadow)";
     public static final String COPY_TO_CLIPBOARD = "./scripts/copy_to_clipboard.js";
-    public static final String CURSOS_POINTER = "pointer";
+    public static final String CURSOR_POINTER = "pointer";
     public static final String RESOURCES_SVG_IMAGES = "/META-INF/resources/svg-images/";
     public static final String COPY_ALT_SVG = "copy-alt.svg";
     public static final String MENU_ITEM_NO_CHECKMARK = "menu-item-no-checkmark";
@@ -71,4 +71,8 @@ public class XsdValidatorConstants {
               slider.scrollLeft = scrollLeft - walk;
             });
             """;
+    public static final String XSD = ".xsd";
+    public static final String XML = ".xml";
+
+    public static final String SUPPORT_FILES = "[xml, xsd, zip, rar, 7z]";
 }
