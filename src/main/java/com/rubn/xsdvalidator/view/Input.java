@@ -161,40 +161,38 @@ public class Input extends Layout implements BeforeEnterObserver {
         add(divHeader, verticalLayoutArea, actions);
     }
 
-    // --- NEW: Method to Open Search Dialog ---
     private void openXsdSearchDialog() {
-        // Filter only .xsd files from the map keys
+        // Filter by xsd and xml
         List<String> xsdFiles = mapPrefixFileNameAndContent.keySet().stream()
                 .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
                 .sorted()
                 .collect(Collectors.toList());
 
         if (xsdFiles.isEmpty()) {
-            Notification.show("No XSD files uploaded to search.", 3000, Notification.Position.MIDDLE);
+            ConfirmDialogBuilder.showWarning("No XSD files uploaded to search.");
             return;
         }
-
-        SearchDialog dialog = new SearchDialog(xsdFiles, selectedFileName -> {
-            // Callback when user selects a file
-            selectXsdFromCode(selectedFileName);
-        });
+        SearchDialog dialog = new SearchDialog(xsdFiles, this.selectedMainXsd, this.selectedXmlFile,
+                selectedSet -> selectedSet.forEach(this::selectXsdFromCode));
         dialog.open();
     }
 
-    // --- NEW: Method to Select XSD from Code ---
     private void selectXsdFromCode(String fileName) {
-        // Iterate through the UI list to find the matching FileListItem
-        customList.getChildren().forEach(component -> {
-            if (component instanceof FileListItem item) {
-                if (item.getFileName().equals(fileName)) {
-                    // This will trigger the existing listener logic (updating selectedMainXsd, clearing others)
-                    item.setSelected(true);
-
-                    // Optional: Scroll to the item
-                    item.getElement().executeJs("this.scrollIntoView({block: 'center', behavior: 'smooth'});");
-                }
+        FileListItem foundItem = null;
+        List<Component> components = customList
+                .getChildren()
+                .toList();
+        for (Component component : components) {
+            if (component instanceof FileListItem item && item.getFileName().equals(fileName)) {
+                foundItem = item;
+                break;
             }
-        });
+        }
+        if (foundItem != null) {
+            foundItem.setSelected(true);
+            customList.addComponentAsFirst(foundItem);
+            foundItem.getElement().executeJs("this.scrollIntoView({block: 'center', behavior: 'smooth'});");
+        }
     }
 
     private void showMessageFailedToStartValidation() {
