@@ -1,0 +1,9 @@
+vaadin-dialog.search-dialog-content::part(backdrop) {
+    backdrop-filter: blur(1px);
+    will-change: backdrop-filter;
+    contain: layout style paint;
+}
+
+vaadin-dialog.search-dialog-content::part(content) {
+    padding: var(--lumo-space-s);
+}

@@ -5,6 +5,7 @@
 @import url("./styles/upload.css");
 @import url("./styles/input-view.css");
 @import url("./styles/about.css");
+@import url("./styles/search-dialog.css");
 
 html {
   --lumo-font-family: 'Arimo', sans-serif;

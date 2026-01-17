@@ -56,6 +56,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
@@ -82,6 +85,7 @@ public class Input extends Layout implements BeforeEnterObserver {
     private final CustomList customList;
     private final Uploader uploader;
     private final Anchor anchorDownloadErrors;
+    private final Button buttonSearchXsd;
     /**
      * Service
      */
@@ -120,7 +124,14 @@ public class Input extends Layout implements BeforeEnterObserver {
         this.anchorDownloadErrors = new Anchor();
         this.anchorDownloadErrors.setEnabled(false);
         MenuBar menuBar = this.buildMenuBarOptions();
-        final Div divHeader = new Div(customList, menuBar);
+
+        // --- NEW: Add Search Button to Header ---
+        this.buttonSearchXsd = new Button(VaadinIcon.SEARCH.create());
+        this.buttonSearchXsd.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+        this.buttonSearchXsd.setTooltipText("Search xsd or xml");
+        this.buttonSearchXsd.addClickListener(e -> this.openXsdSearchDialog());
+
+        final Div divHeader = new Div(customList, buttonSearchXsd, menuBar);
         divHeader.addClassName("div-files-wrapper");
 
         this.uploader = new Uploader(attachment);
@@ -148,6 +159,42 @@ public class Input extends Layout implements BeforeEnterObserver {
         actions.addClassName("actions");
 
         add(divHeader, verticalLayoutArea, actions);
+    }
+
+    // --- NEW: Method to Open Search Dialog ---
+    private void openXsdSearchDialog() {
+        // Filter only .xsd files from the map keys
+        List<String> xsdFiles = mapPrefixFileNameAndContent.keySet().stream()
+                .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
+                .sorted()
+                .collect(Collectors.toList());
+
+        if (xsdFiles.isEmpty()) {
+            Notification.show("No XSD files uploaded to search.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        SearchDialog dialog = new SearchDialog(xsdFiles, selectedFileName -> {
+            // Callback when user selects a file
+            selectXsdFromCode(selectedFileName);
+        });
+        dialog.open();
+    }
+
+    // --- NEW: Method to Select XSD from Code ---
+    private void selectXsdFromCode(String fileName) {
+        // Iterate through the UI list to find the matching FileListItem
+        customList.getChildren().forEach(component -> {
+            if (component instanceof FileListItem item) {
+                if (item.getFileName().equals(fileName)) {
+                    // This will trigger the existing listener logic (updating selectedMainXsd, clearing others)
+                    item.setSelected(true);
+
+                    // Optional: Scroll to the item
+                    item.getElement().executeJs("this.scrollIntoView({block: 'center', behavior: 'smooth'});");
+                }
+            }
+        });
     }
 
     private void showMessageFailedToStartValidation() {
@@ -362,31 +409,34 @@ public class Input extends Layout implements BeforeEnterObserver {
     private FileListItem buildFileListItem(String fileName, long contentLength) {
         BiConsumer<FileListItem, Boolean> onItemSelected = null;
         String lowerName = fileName.toLowerCase();
-
         if (lowerName.endsWith(XML)) {
-            onItemSelected = (selectedItem, isChecked) -> {
-                if (isChecked) {
-                    this.selectedXmlFile = selectedItem.getFileName();
-                    this.clearOtherSelections(selectedItem, XML);
-                } else {
-                    if (selectedItem.getFileName().equals(this.selectedXmlFile)) {
-                        this.selectedXmlFile = StringUtils.EMPTY;
-                    }
-                }
-            };
+            onItemSelected = createSelectionListener(XML,
+                    value -> this.selectedXmlFile = value, // Setter
+                    () -> this.selectedXmlFile // Getter
+            );
         } else {
-            onItemSelected = (item, isChecked) -> {
-                if (isChecked) {
-                    this.selectedMainXsd = item.getFileName();
-                    this.clearOtherSelections(item, XSD);
-                } else {
-                    if (item.getFileName().equals(this.selectedMainXsd)) {
-                        this.selectedMainXsd = StringUtils.EMPTY;
-                    }
-                }
-            };
+            onItemSelected = createSelectionListener(XSD,
+                    value -> this.selectedMainXsd = value, // Setter
+                    () -> this.selectedMainXsd // Getter
+            );
         }
         return new FileListItem(fileName, contentLength, onItemSelected);
+    }
+
+    private BiConsumer<FileListItem, Boolean> createSelectionListener(String extension, Consumer<String> stateSetter,
+                                                                      Supplier<String> stateGetter) {
+
+        return (item, isChecked) -> {
+            if (isChecked) {
+                stateSetter.accept(item.getFileName());
+                this.clearOtherSelections(item, extension);
+            } else {
+                String currentSelection = stateGetter.get();
+                if (item.getFileName().equals(currentSelection)) {
+                    stateSetter.accept(StringUtils.EMPTY);
+                }
+            }
+        };
     }
 
     /**

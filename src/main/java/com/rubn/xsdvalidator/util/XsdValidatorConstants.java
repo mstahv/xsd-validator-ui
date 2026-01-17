@@ -26,6 +26,33 @@ public class XsdValidatorConstants {
                 `;
                 this.appendChild(style);
             """;
+    public static final String SCROLLBAR_CUSTOM_STYLE_ITEMS = """
+                // 1. Accedemos al Shadow Root, no al elemento principal
+                const root = this.shadowRoot; 
+            
+                // Si no tiene shadowRoot (ej. es un Div normal), usamos 'this'
+                const target = root ? root : this;
+            
+                const style = document.createElement('style');
+            
+                // 2. IMPORTANTE: Debemos apuntar a [part="items"] si es un ListBox
+                // Si es un Div normal, quitamos el [part="items"]
+                style.textContent = `
+                    [part="items"]::-webkit-scrollbar {
+                        width: 8px;
+                        height: 8px;
+                    }
+                    [part="items"]::-webkit-scrollbar-track {
+                        background-color: var(--bg2, #f0f0f0); /* Fallback por si la variable no existe dentro */
+                    }
+                    [part="items"]::-webkit-scrollbar-thumb {
+                        background-color: hsla(0, 0%, 49.8%, 0.5);
+                        border-radius: 4px;
+                    }
+                `;
+            
+                target.appendChild(style);
+            """;
     public static final String WINDOW_COPY_TO_CLIPBOARD = "window.copyToClipboard($0)";
     public static final String CONTEXT_MENU_ITEM_NO_CHECKMARK = "context-menu-item-no-checkmark";
     public static final String VAR_CUSTOM_BOX_SHADOW = "var(--custom-box-shadow)";
@@ -36,14 +63,14 @@ public class XsdValidatorConstants {
     public static final String MENU_ITEM_NO_CHECKMARK = "menu-item-no-checkmark";
     public static final String DELETE_MENU_ITEM_NO_CHECKMARK = "delete";
     public static final String JS_COMMAND = """
-                    const span = document.createElement('span');
-                    span.className = 'error-word fade-in';
-                    span.textContent = $0 + ' ';
-                    this.appendChild(span);
-                    void span.offsetWidth;
-                    span.classList.add('visible');
-                    span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                """;
+                const span = document.createElement('span');
+                span.className = 'error-word fade-in';
+                span.textContent = $0 + ' ';
+                this.appendChild(span);
+                void span.offsetWidth;
+                span.classList.add('visible');
+                span.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            """;
     public static final String CLICK_LIKE_HORIZONTAL_SCROLL = """
             const slider = this;
             let isDown = false;
