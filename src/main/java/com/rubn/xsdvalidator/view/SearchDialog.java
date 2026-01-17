@@ -12,7 +12,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.Comparator;
@@ -91,11 +90,8 @@ public class SearchDialog extends Dialog {
         }));
 
         listBox.addValueChangeListener(event -> {
-            if (event.isFromClient()) { // Solo si es clic del usuario
-                this.currentSelection.clear();
-                if (event.getValue() != null) {
-                    this.currentSelection.addAll(event.getValue());
-                }
+            if (event.isFromClient() && event.getValue() != null) {
+                this.currentSelection.addAll(event.getValue());
                 onSelectCallback.accept(this.currentSelection);
             }
         });
