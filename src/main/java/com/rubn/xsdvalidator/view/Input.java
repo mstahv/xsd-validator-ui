@@ -40,7 +40,6 @@ import com.vaadin.flow.server.streams.UploadMetadata;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.util.FastByteArrayOutputStream;
 import reactor.core.publisher.Mono;
@@ -91,7 +90,6 @@ public class Input extends Layout implements BeforeEnterObserver {
      */
     private final ValidationXsdSchemaService validationXsdSchemaService;
     private final DecompressionService decompressionService;
-    private final ApplicationEventPublisher applicationEventPublisher;
     /**
      * Mutable fields
      */
@@ -100,11 +98,9 @@ public class Input extends Layout implements BeforeEnterObserver {
     private String selectedMainXsd;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
-                 final DecompressionService decompressionService,
-                 final ApplicationEventPublisher applicationEventPublisher) {
+                 final DecompressionService decompressionService) {
         this.validationXsdSchemaService = validationXsdSchemaService;
         this.decompressionService = decompressionService;
-        this.applicationEventPublisher = applicationEventPublisher;
         addClassName("input-layout");
         // Text area
         verticalLayoutArea = new VerticalLayout();
@@ -142,15 +138,17 @@ public class Input extends Layout implements BeforeEnterObserver {
         validateButton.setTooltipText("validate");
         validateButton.setDisableOnClick(true);
         validateButton.addClickListener(event -> {
-            if (Objects.isNull(this.selectedXmlFile) || this.selectedXmlFile.isBlank()) {
-                showMessageFailedToStartValidation();
-                return;
+            if(event.isFromClient()) {
+                if (Objects.isNull(this.selectedXmlFile) || this.selectedXmlFile.isBlank()) {
+                    showMessageFailedToStartValidation();
+                    return;
+                }
+                if (Objects.isNull(this.selectedMainXsd) || this.selectedMainXsd.isBlank()) {
+                    showMessageFailedToStartValidation();
+                    return;
+                }
+                this.validateXmlInputWithXsdSchema();
             }
-            if (Objects.isNull(this.selectedMainXsd) || this.selectedMainXsd.isBlank()) {
-                showMessageFailedToStartValidation();
-                return;
-            }
-            this.validateXmlInputWithXsdSchema();
         });
 
         Layout actions = new Layout(this.uploader, validateButton);
@@ -416,7 +414,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     () -> this.selectedMainXsd // Getter
             );
         }
-        return new FileListItem(fileName, contentLength, onItemSelected, applicationEventPublisher);
+        return new FileListItem(fileName, contentLength, onItemSelected);
     }
 
     private BiConsumer<FileListItem, Boolean> createSelectionListener(String extension, Consumer<String> stateSetter,

@@ -1,6 +1,5 @@
 package com.rubn.xsdvalidator.view;
 
-import com.rubn.xsdvalidator.records.CheckBoxEventRecord;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -17,7 +16,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.springframework.context.event.EventListener;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -125,8 +124,38 @@ public class SearchDialog extends Dialog {
         badgesRadioGroup.getElement().getChildren().forEach(item -> item.getStyle().setCursor(CURSOR_POINTER));
         badgesRadioGroup.addValueChangeListener(event -> {
             String value = this.fieldNotEmptyOrUseItems(event);
-            this.filterList(value);
+            if(value.isEmpty()) {
+                this.filterList(StringUtils.EMPTY);
+                System.out.println("Filtro removido");
+            } else {
+                this.filterList(value);
+            }
         });
+        //TODO deselect by double-clicking on the same item
+        badgesRadioGroup.getElement().executeJs(
+                "let lastChecked = null;" +
+                        "const group = this;" +
+
+                        // Al presionar el ratón (antes de soltar), miramos si ya estaba marcado
+                        "group.addEventListener('mousedown', e => {" +
+                        "    const radio = e.target.closest('vaadin-radio-button');" +
+                        "    if (radio && radio.checked) {" +
+                        "        lastChecked = radio;" +
+                        "    } else {" +
+                        "        lastChecked = null;" +
+                        "    }" +
+                        "});" +
+
+                        // Al soltar el click
+                        "group.addEventListener('click', e => {" +
+                        "    const radio = e.target.closest('vaadin-radio-button');" +
+                        "    // Si hicimos click en el mismo que marcamos en mousedown..." +
+                        "    if (radio && radio === lastChecked) {" +
+                        "        group.value = null;" + // Borramos el valor
+                        "        lastChecked = null;" +
+                        "    }" +
+                        "});"
+        );
         return badgesRadioGroup;
     }
 
@@ -149,7 +178,7 @@ public class SearchDialog extends Dialog {
                     .toList();
         }
         listBox.setItems(itemsToShow);
-        if(itemsToShow.isEmpty()) {
+        if (itemsToShow.isEmpty()) {
             listBox.add(this.divCenterSpanNotSearch);
         } else {
             listBox.remove(this.divCenterSpanNotSearch);
@@ -158,17 +187,6 @@ public class SearchDialog extends Dialog {
                 .filter(itemsToShow::contains)
                 .collect(Collectors.toSet());
         listBox.setValue(selectionToRestore);
-    }
-
-    //esta clase debe ser componente de Spring para que esto se dispare correctamente
-    @EventListener
-    public void listener(CheckBoxEventRecord checkBoxEventRecord) {
-        if(checkBoxEventRecord.fileName().equals("TExt")) {
-
-        }
-        if(checkBoxEventRecord.fileName().equals("TExt")) {
-
-        }
     }
 
 }
