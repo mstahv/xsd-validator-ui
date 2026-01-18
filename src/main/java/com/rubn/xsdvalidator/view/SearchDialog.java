@@ -2,16 +2,15 @@ package com.rubn.xsdvalidator.view;
 
 import com.rubn.xsdvalidator.records.CheckBoxEventRecord;
 import com.rubn.xsdvalidator.util.SvgFactory;
+import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
-import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -30,12 +29,14 @@ import java.util.stream.Collectors;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.SCROLLBAR_CUSTOM_STYLE_ITEMS;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XML;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 
 /**
  * @author rubn
  */
 public class SearchDialog extends Dialog {
 
+    private final TextField searchField = new TextField();
     private final Div divCenterSpanNotSearch = new Div();
     private final MultiSelectListBox<String> listBox = new MultiSelectListBox<>();
     private final Set<String> currentSelection = new ConcurrentSkipListSet<>();
@@ -43,6 +44,7 @@ public class SearchDialog extends Dialog {
     private final List<String> allXsdXmlFiles;
     private final String initialXsdSelection;
     private final String initialXmlSelection;
+    private String currentItemSelection;
 
     public SearchDialog(List<String> rawFileList, String initialXsdSelection,
                         String initialXmlSelection,
@@ -57,11 +59,11 @@ public class SearchDialog extends Dialog {
                 LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
 
-        final TextField searchField = new TextField();
         searchField.setPlaceholder("Filter [xsd, xml]");
         searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
         searchField.setClearButtonVisible(true);
         searchField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        searchField.addClassName(LumoUtility.TextColor.SECONDARY);
         searchField.setWidthFull();
         searchField.setValueChangeMode(ValueChangeMode.EAGER);
         searchField.addValueChangeListener(e -> this.filterList(e.getValue()));
@@ -93,7 +95,9 @@ public class SearchDialog extends Dialog {
             SvgIcon icon = SvgFactory.createIconFromSvg(fileName, "40px", null);
             icon.setSize("40px");
             icon.getStyle().set("margin-right", "8px");
-            return new Span(icon, new Span(paramfileName));
+            Span spanParamFileName = new Span(paramfileName);
+            spanParamFileName.addClassName(LumoUtility.TextColor.SECONDARY);
+            return new Span(icon, spanParamFileName);
         }));
 
         listBox.addValueChangeListener(event -> {
@@ -103,9 +107,9 @@ public class SearchDialog extends Dialog {
             }
         });
 
-        final HorizontalLayout badgeFilterRow = this.buildBadgeFilterRow();
+        final RadioButtonGroup<String> radioButtonGroup = buildFilterBadgesRadioButtonGroup();
 
-        VerticalLayout layout = new VerticalLayout(searchField, badgeFilterRow, new Hr(), listBox);
+        VerticalLayout layout = new VerticalLayout(searchField, radioButtonGroup, new Hr(), listBox);
         layout.setPadding(false);
         layout.setSpacing(false);
         layout.setMargin(false);
@@ -115,35 +119,19 @@ public class SearchDialog extends Dialog {
 
     private RadioButtonGroup<String> buildFilterBadgesRadioButtonGroup() {
         RadioButtonGroup<String> badgesRadioGroup = new RadioButtonGroup<>();
-        badgesRadioGroup.setWidthFull();
         badgesRadioGroup.getStyle().setAlignItems(Style.AlignItems.END);
-        badgesRadioGroup.setItems(List.of(".xml"));
-//        badgesRadioGroup.setItemLabelGenerator(RadioButtomGridLoginSchedulerEnum::setItemLabelGenerator);
-        applyRadioButtomTheme(badgesRadioGroup);
+        badgesRadioGroup.setItems(List.of(XML, XSD));
+        badgesRadioGroup.addThemeName("badge-pills");
+        badgesRadioGroup.getElement().getChildren().forEach(item -> item.getStyle().setCursor(CURSOR_POINTER));
+        badgesRadioGroup.addValueChangeListener(event -> {
+            String value = this.fieldNotEmptyOrUseItems(event);
+            this.filterList(value);
+        });
         return badgesRadioGroup;
     }
 
-    private void applyRadioButtomTheme(RadioButtonGroup<String> radioButtonGroup) {
-        radioButtonGroup.getChildren().forEach(component -> {
-            if (component.getElement().getChild(0).toString().contains("xml")) {
-                component.getElement().getThemeList().add("toggle badge pill");
-                Tooltip.forComponent(component).setText("Refresh table");
-            }
-            component.addClassName(LumoUtility.Margin.Right.MEDIUM);
-            component.getElement().getStyle().setCursor(CURSOR_POINTER);
-        });
-    }
-
-    private HorizontalLayout buildBadgeFilterRow() {
-        Span spanXmlBadge = new Span("xml");
-        spanXmlBadge.getElement().getThemeList().add("badge pill contrast");
-        spanXmlBadge.addClickListener(event -> this.filterList(XML));
-
-        final HorizontalLayout headerRow = new HorizontalLayout(spanXmlBadge);
-        headerRow.setPadding(false);
-        headerRow.setWidthFull();
-//        headerRow.setAlignItems(FlexComponent.Alignment.CENTER);
-        return headerRow;
+    private String fieldNotEmptyOrUseItems(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<String>, String> event) {
+        return !this.searchField.getValue().isEmpty() ? this.searchField.getValue() : event.getValue();
     }
 
     private void filterList(String filterText) {

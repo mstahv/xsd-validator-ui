@@ -8,6 +8,7 @@ import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Main;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -20,6 +21,7 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.COPY_TO_CLIPBOARD;
@@ -31,6 +33,7 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 @RouteAlias("xsd-validator")
 @PageTitle("xsd-validator")
 @Menu(order = 1, icon = "vaadin:clipboard-check", title = "XSD Validator")
+@CssImport(value = "")
 @JsModule(COPY_TO_CLIPBOARD)
 class XsdValidatorView extends Main {
 
@@ -42,7 +45,7 @@ class XsdValidatorView extends Main {
 
 
         final Input input = new Input(validationXsdSchemaService, decompressionService, applicationEventPublisher);
-        add(new ViewToolbar("XSD Validator", this.buildSearch(input), this.createInfoIcon()));
+        add(new ViewToolbar(StringUtils.EMPTY, this.buildSearch(input), this.createInfoIcon()));
         add(input);
     }
 

@@ -1,0 +1,58 @@
+vaadin-radio-group[theme~="badge-pills"] {
+    display: flex;
+}
+
+/* (El Item individual) */
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button {
+    cursor: pointer !important;
+    user-select: none; /* Para que no se seleccione el texto al hacer clic rápido */
+    margin-right: var(--lumo-space-s);
+    padding: 0 var(--lumo-space-xs) 0 var(--lumo-space-xs);
+    border-radius: 12px;
+    background-color: var(--lumo-contrast-5pct);
+    color: var(--lumo-body-text-color);
+    font-size: var(--lumo-font-size-s);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex; /* Asegura que el contenedor se comporte como caja */
+    align-items: center;
+    justify-content: center;
+}
+
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button::part(radio) {
+    display: none !important;
+    width: 0;
+    margin: 0;
+}
+
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button::part(label) {
+    cursor: pointer !important;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button:hover:not([checked]) {
+    cursor: pointer !important;
+    background-color: var(--lumo-contrast-10pct);
+    background-image: linear-gradient(var(--lumo-contrast-5pct), var(--lumo-contrast-5pct));
+}
+
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button[checked] {
+    background-color: var(--lumo-contrast-10pct); /* Fondo azul muy claro */
+    color: var(--lumo-primary-text-color); /* Texto azul primario */
+    box-shadow: 0 2px 1px -1px rgba(0,0,0,.2),0 1px 1px 0 rgba(0,0,0,.14),0 1px 3px 0 rgba(0,0,0,.12);
+    font-weight: 600;
+}
+
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button[focus-ring] {
+    cursor: pointer !important;
+    box-shadow: 0 0 0 2px var(--lumo-base-color), 0 0 0 4px var(--lumo-primary-color);
+}
+
+vaadin-radio-group[theme~="badge-pills"] > vaadin-radio-button > input {
+    pointer-events: none !important;
+}
