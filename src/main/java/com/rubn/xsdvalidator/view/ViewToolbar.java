@@ -9,14 +9,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Objects;
-
 public final class ViewToolbar extends Composite<HorizontalLayout> {
 
     public ViewToolbar(@Nullable String viewTitle, Component... components) {
         var layout = getContent();
         layout.setPadding(false);
-        layout.setWrap(true);
         layout.setWidthFull();
         layout.addClassName(LumoUtility.Border.BOTTOM);
 
@@ -27,23 +24,18 @@ public final class ViewToolbar extends Composite<HorizontalLayout> {
         title.addClassNames(LumoUtility.FontSize.XLARGE, LumoUtility.Margin.NONE, LumoUtility.FontWeight.LIGHT);
 
         var toggleAndTitle = new HorizontalLayout(drawerToggle, title);
+        toggleAndTitle.setId("toggle-and-title");
         toggleAndTitle.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+        toggleAndTitle.setWidth("20%");
         layout.add(toggleAndTitle);
-        layout.setFlexGrow(1, toggleAndTitle);
 
         if (components.length > 0) {
             var actions = new HorizontalLayout(components);
+            actions.setWidthFull();
             actions.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+            actions.setAlignItems(FlexComponent.Alignment.CENTER);
             layout.add(actions);
         }
     }
 
-    public static Component group(Component... components) {
-        HorizontalLayout group = new HorizontalLayout();
-        if(Objects.nonNull(components)) {
-            group.add(components);
-        }
-        group.setWrap(true);
-        return group;
-    }
 }

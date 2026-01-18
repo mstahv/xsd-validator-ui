@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.view.list;
 
+import com.rubn.xsdvalidator.records.CheckBoxEventRecord;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.view.Span;
@@ -13,22 +14,25 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Background;
 import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class FileListItem extends ListItem {
 
     private final Checkbox checkbox;
     private final String fileName;
 
-    public FileListItem(String prefixFileName, long contentLength, BiConsumer<FileListItem, Boolean> onSelectionListener) {
+    public FileListItem(String prefixFileName, long contentLength,
+                        BiConsumer<FileListItem, Boolean> onSelectionListener,
+                        ApplicationEventPublisher applicationEventPublisher) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
 
         this.checkbox.addValueChangeListener(event -> {
-            if (event.getValue()) {
+            if (event.isFromClient() && event.getValue() != null) {
                 onSelectionListener.accept(this, event.getValue());
+                applicationEventPublisher.publishEvent(new CheckBoxEventRecord(event.getValue(), prefixFileName));
             }
         });
 

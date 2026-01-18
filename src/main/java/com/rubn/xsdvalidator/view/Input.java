@@ -40,6 +40,7 @@ import com.vaadin.flow.server.streams.UploadMetadata;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.util.FastByteArrayOutputStream;
 import reactor.core.publisher.Mono;
@@ -85,12 +86,12 @@ public class Input extends Layout implements BeforeEnterObserver {
     private final CustomList customList;
     private final Uploader uploader;
     private final Anchor anchorDownloadErrors;
-    private final Button buttonSearchXsd;
     /**
      * Service
      */
     private final ValidationXsdSchemaService validationXsdSchemaService;
     private final DecompressionService decompressionService;
+    private final ApplicationEventPublisher applicationEventPublisher;
     /**
      * Mutable fields
      */
@@ -98,9 +99,12 @@ public class Input extends Layout implements BeforeEnterObserver {
     private String selectedXmlFile;
     private String selectedMainXsd;
 
-    public Input(final ValidationXsdSchemaService validationXsdSchemaService, final DecompressionService decompressionService) {
+    public Input(final ValidationXsdSchemaService validationXsdSchemaService,
+                 final DecompressionService decompressionService,
+                 final ApplicationEventPublisher applicationEventPublisher) {
         this.validationXsdSchemaService = validationXsdSchemaService;
         this.decompressionService = decompressionService;
+        this.applicationEventPublisher = applicationEventPublisher;
         addClassName("input-layout");
         // Text area
         verticalLayoutArea = new VerticalLayout();
@@ -125,13 +129,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         this.anchorDownloadErrors.setEnabled(false);
         MenuBar menuBar = this.buildMenuBarOptions();
 
-        // --- NEW: Add Search Button to Header ---
-        this.buttonSearchXsd = new Button(VaadinIcon.SEARCH.create());
-        this.buttonSearchXsd.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        this.buttonSearchXsd.setTooltipText("Search xsd or xml");
-        this.buttonSearchXsd.addClickListener(e -> this.openXsdSearchDialog());
-
-        final Div divHeader = new Div(customList, buttonSearchXsd, menuBar);
+        final Div divHeader = new Div(customList, menuBar);
         divHeader.addClassName("div-files-wrapper");
 
         this.uploader = new Uploader(attachment);
@@ -161,7 +159,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         add(divHeader, verticalLayoutArea, actions);
     }
 
-    private void openXsdSearchDialog() {
+    public void openXsdSearchDialog() {
         // Filter by xsd and xml
         List<String> xsdFiles = mapPrefixFileNameAndContent.keySet().stream()
                 .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
@@ -169,7 +167,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .collect(Collectors.toList());
 
         if (xsdFiles.isEmpty()) {
-            ConfirmDialogBuilder.showWarning("No XSD files uploaded to search.");
+            ConfirmDialogBuilder.showWarning("No files have been uploaded.");
             return;
         }
         SearchDialog dialog = new SearchDialog(xsdFiles, this.selectedMainXsd, this.selectedXmlFile,
@@ -418,7 +416,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     () -> this.selectedMainXsd // Getter
             );
         }
-        return new FileListItem(fileName, contentLength, onItemSelected);
+        return new FileListItem(fileName, contentLength, onItemSelected, applicationEventPublisher);
     }
 
     private BiConsumer<FileListItem, Boolean> createSelectionListener(String extension, Consumer<String> stateSetter,
