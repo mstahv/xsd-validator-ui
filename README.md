@@ -1,6 +1,6 @@
 # Xsd-validator-UI
 
-<img width="1852" height="991" alt="image" src="https://github.com/user-attachments/assets/bac00bb1-ac22-4f04-a863-ebca159f884a" />
+<img width="1856" height="989" alt="image" src="https://github.com/user-attachments/assets/45961175-bdb7-40eb-babc-a07e6f7af042" />
 
 ## Starting in Development Mode
 
