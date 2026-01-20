@@ -183,6 +183,9 @@
                         <configuration>
                             <imageName>xsd-validator-ui-${project.version}</imageName>
                             <mainClass>com.rubn.Application</mainClass>
+                            <buildArgs>
+                                <buildArg>--windows-subsystem=windows</buildArg>
+                            </buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>
