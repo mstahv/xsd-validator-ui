@@ -1,6 +1,7 @@
 package com.rubn.xsdvalidator.view;
 
 import com.rubn.xsdvalidator.util.SvgFactory;
+import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
@@ -18,6 +19,7 @@ import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -114,6 +116,12 @@ public class SearchDialog extends Dialog {
         layout.setMargin(false);
         super.add(layout);
         searchField.focus();
+
+        this.buildSpanCounters().forEach(span -> {
+            super.getFooter().add(span);
+            super.getFooter().getElement().getStyle().setJustifyContent(Style.JustifyContent.FLEX_START);
+        });
+
     }
 
     private RadioButtonGroup<String> buildFilterBadgesRadioButtonGroup() {
@@ -187,6 +195,32 @@ public class SearchDialog extends Dialog {
                 .filter(itemsToShow::contains)
                 .collect(Collectors.toSet());
         listBox.setValue(selectionToRestore);
+    }
+
+    private List<Span> buildSpanCounters() {
+        long countXsd = allXsdXmlFiles
+                .stream()
+                .filter(name -> name.toLowerCase().endsWith(XSD))
+                .count();
+
+        long countXml = allXsdXmlFiles
+                .stream()
+                .filter(name -> name.toLowerCase().endsWith(XML))
+                .count();
+
+        final Span totalXmlAndXsds = this.buildSpan("Total: ", allXsdXmlFiles.size());
+        final Span xsdSpan = this.buildSpan("xsd: ", countXsd);
+        final Span xmlSpan = this.buildSpan("xml: ", countXml);
+
+        return Arrays.asList(totalXmlAndXsds, xsdSpan, xmlSpan);
+    }
+
+    private Span buildSpan(String name, long countXsd) {
+        Span span = new Span(name + countXsd);
+        span.getElement().getThemeList().add("badge pill small");
+        span.addClassNames(LumoUtility.TextColor.SECONDARY);
+        span.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
+        return span;
     }
 
 }

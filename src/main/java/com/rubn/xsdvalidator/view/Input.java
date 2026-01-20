@@ -159,16 +159,16 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     public void openXsdSearchDialog() {
         // Filter by xsd and xml
-        List<String> xsdFiles = mapPrefixFileNameAndContent.keySet().stream()
+        List<String> xsdXmlFiles = mapPrefixFileNameAndContent.keySet().stream()
                 .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
 
-        if (xsdFiles.isEmpty()) {
+        if (xsdXmlFiles.isEmpty()) {
             ConfirmDialogBuilder.showWarning("No files have been uploaded.");
             return;
         }
-        SearchDialog dialog = new SearchDialog(xsdFiles, this.selectedMainXsd, this.selectedXmlFile,
+        SearchDialog dialog = new SearchDialog(xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
                 selectedSet -> selectedSet.forEach(this::selectXsdFromCode));
         dialog.open();
     }
