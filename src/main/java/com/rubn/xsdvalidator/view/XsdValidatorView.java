@@ -49,6 +49,7 @@ class XsdValidatorView extends Main {
 
     private Span createInfoIcon() {
         final Span span = new Span();
+        span.getStyle().setCursor(CURSOR_POINTER);
         Tooltip.forComponent(span).setText("Show info");
         span.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.AlignSelf.CENTER, LumoUtility.Margin.Right.SMALL);
         span.add(VaadinIcon.INFO_CIRCLE.create());
@@ -66,7 +67,6 @@ class XsdValidatorView extends Main {
         buttonSearchXsd.getStyle().setBorder("1px var(--lumo-utility-border-style,solid) var(--lumo-utility-border-color,var(--lumo-contrast-10pct))");
         buttonSearchXsd.addClassName(LumoUtility.TextColor.SECONDARY);
         Span spanShortCut = new Span("Ctrl K");
-        spanShortCut.getStyle().setMarginLeft("10rem");
         spanShortCut.getElement().getThemeList().add("badge small pill constrast");
         spanShortCut.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
         Shortcuts.addShortcutListener(buttonSearchXsd, input::openXsdSearchDialog,

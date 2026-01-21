@@ -7,3 +7,11 @@ vaadin-dialog.search-dialog-content::part(backdrop) {
 vaadin-dialog.search-dialog-content::part(content) {
     padding: var(--lumo-space-s);
 }
+
+vaadin-dialog.search-dialog-content::part(footer) {
+    justify-content: flex-start;
+}
+
+.hr-line {
+    margin: var(--lumo-space-xs);
+}
