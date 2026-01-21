@@ -4,7 +4,7 @@
     <!-- Project from https://start.vaadin.com/1f51f6f0-718c-49b1-b504-75f5c5037e28 -->
     <groupId>com.rubn</groupId>
     <artifactId>xsd-validator-ui</artifactId>
-    <version>1.0.29-SNAPSHOT</version>
+    <version>1.0.32-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <properties>
@@ -95,13 +95,6 @@
             <version>3.1.1</version>
         </dependency>
 
-        <!-- https://github.com/junrar/junrar/releases
-        <dependency>
-            <groupId>com.github.junrar</groupId>
-            <artifactId>junrar</artifactId>
-            <version>7.5.7</version>
-        </dependency>-->
-
         <!--// Source - https://stackoverflow.com/a/74223706
         // Posted by Alex A, modified by community. See post 'Timeline' for change history
         // Retrieved 2026-01-10, License - CC BY-SA 4.0 -->
@@ -117,7 +110,6 @@
             <artifactId>sevenzipjbinding-all-platforms</artifactId>
             <version>16.02-2.01</version>
         </dependency>
-
 
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
         <dependency>
@@ -171,7 +163,36 @@
 
         </plugins>
     </build>
-    
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>xsd-validator-ui-${project.version}</imageName>
+                            <mainClass>com.rubn.Application</mainClass>
+                            <buildArgs>
+<!--                                <buildArg>&#45;&#45;windows-subsystem=windows</buildArg>-->
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <repositories>
         <repository>
             <id>central</id>

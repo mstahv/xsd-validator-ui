@@ -6,7 +6,7 @@
 @import url("./styles/input-view.css");
 @import url("./styles/about.css");
 @import url("./styles/search-dialog.css");
-@import url("./styles/radio-button-badge-pill.css");
+/*@import url("./styles/radio-button-badge-pill.css");*/
 
 html {
   --lumo-font-family: 'Arimo', sans-serif;

@@ -122,3 +122,32 @@ vaadin-menu-bar-item.delete:hover {
 .fixed-menu {
     flex-shrink: 0;
 }
+
+.search-animation {
+    display: inline-flex;
+    align-items: center;
+    min-width: 4.5ch;
+}
+
+.search-animation::after {
+    content: "";
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 2px solid var(--lumo-primary-color);
+    animation: typingCycleFixed 6s infinite;
+}
+
+@keyframes typingCycleFixed {
+    0%   { content: " .xml"; width: 0;    border-color: transparent;}
+    5%   { content: " .xml"; width: 0;    border-color: var(--lumo-primary-color);}
+    20%  { content: " .xml"; width: 4ch; }
+    40%  { content: " .xml"; width: 4ch; } /* Pausa para leer */
+    50%  { content: " .xml"; width: 0; }   /* Borra */
+
+    51%  { content: " .xsd"; width: 0;    border-color: transparent;}
+    55%  { content: " .xsd"; width: 0;    border-color: var(--lumo-primary-color);}
+    70%  { content: " .xsd"; width: 4ch; }
+    90%  { content: " .xsd"; width: 4ch; }
+    100% { content: " .xsd"; width: 0;    border-color: transparent;}
+}

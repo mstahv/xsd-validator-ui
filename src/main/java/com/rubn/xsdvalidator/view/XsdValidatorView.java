@@ -11,6 +11,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Main;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
@@ -47,6 +49,7 @@ class XsdValidatorView extends Main {
 
     private Span createInfoIcon() {
         final Span span = new Span();
+        span.getStyle().setCursor(CURSOR_POINTER);
         Tooltip.forComponent(span).setText("Show info");
         span.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.AlignSelf.CENTER, LumoUtility.Margin.Right.SMALL);
         span.add(VaadinIcon.INFO_CIRCLE.create());
@@ -57,25 +60,25 @@ class XsdValidatorView extends Main {
     }
 
     private Button buildSearch(Input input) {
-        final Button buttonSearchXsd = new Button("Search");
+        final Button buttonSearchXsd = new Button();
+        Span animatedText = new Span();
+        animatedText.addClassName("search-animation");
         buttonSearchXsd.getStyle().setCursor(CURSOR_POINTER);
-        buttonSearchXsd.getStyle().setBorder(LumoUtility.Border.ALL);
-        buttonSearchXsd.addClassName(LumoUtility.TextColor.SECONDARY);
         buttonSearchXsd.getStyle().setBorder("1px var(--lumo-utility-border-style,solid) var(--lumo-utility-border-color,var(--lumo-contrast-10pct))");
-
+        buttonSearchXsd.addClassName(LumoUtility.TextColor.SECONDARY);
         Span spanShortCut = new Span("Ctrl K");
-        spanShortCut.getStyle().setMarginLeft("10rem");
         spanShortCut.getElement().getThemeList().add("badge small pill constrast");
         spanShortCut.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
-        Shortcuts.addShortcutListener(spanShortCut, shortcutEvent -> {
-            input.openXsdSearchDialog();
-        }, Key.KEY_K, KeyModifier.CONTROL);
-        buttonSearchXsd.setSuffixComponent(spanShortCut);
+        Shortcuts.addShortcutListener(buttonSearchXsd, input::openXsdSearchDialog,
+                Key.KEY_K, KeyModifier.CONTROL);
+        var row = new HorizontalLayout(new Span("Search:"), animatedText, spanShortCut);
+        row.setSpacing("var(--lumo-space-xs)");
+        row.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+        buttonSearchXsd.setSuffixComponent(row);
         buttonSearchXsd.setPrefixComponent(VaadinIcon.SEARCH.create());
         buttonSearchXsd.addThemeVariants(ButtonVariant.LUMO_SMALL);
         buttonSearchXsd.setTooltipText("Search xsd or xml");
         buttonSearchXsd.addClickListener(e -> input.openXsdSearchDialog());
-
         return buttonSearchXsd;
     }
 

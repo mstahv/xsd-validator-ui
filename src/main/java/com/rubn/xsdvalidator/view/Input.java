@@ -58,7 +58,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
@@ -107,7 +106,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         verticalLayoutArea.addClassNames("vertical-area");
         verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
         final ContextMenu contextMenu = this.buildContextMenu(verticalLayoutArea);
-        contextMenu.addItem(this.createRowItemWithIcon("Clear errors!", VaadinIcon.TRASH.create(), "15px"), event -> {
+        contextMenu.addItem(this.createRowItemWithIcon("Clear errors", VaadinIcon.TRASH.create(), "15px"), event -> {
             verticalLayoutArea.removeAll();
             this.counterSpanId.set(0);
             verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
@@ -159,16 +158,16 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     public void openXsdSearchDialog() {
         // Filter by xsd and xml
-        List<String> xsdFiles = mapPrefixFileNameAndContent.keySet().stream()
+        List<String> xsdXmlFiles = mapPrefixFileNameAndContent.keySet().stream()
                 .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
 
-        if (xsdFiles.isEmpty()) {
+        if (xsdXmlFiles.isEmpty()) {
             ConfirmDialogBuilder.showWarning("No files have been uploaded.");
             return;
         }
-        SearchDialog dialog = new SearchDialog(xsdFiles, this.selectedMainXsd, this.selectedXmlFile,
+        SearchDialog dialog = new SearchDialog(xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
                 selectedSet -> selectedSet.forEach(this::selectXsdFromCode));
         dialog.open();
     }
