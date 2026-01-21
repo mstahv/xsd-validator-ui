@@ -28,6 +28,6 @@ spring:
     multipart.max-request-size: 50MB
 
 app:
-  app-version: 1.0.31-SNAPSHOT
+  app-version: 1.0.32-SNAPSHOT
   browser:
     auto-open: open
