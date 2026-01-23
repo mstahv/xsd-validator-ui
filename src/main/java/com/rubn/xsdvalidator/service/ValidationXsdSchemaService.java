@@ -36,6 +36,7 @@ public class ValidationXsdSchemaService {
     private Mono<Schema> loadSchema(final byte[] inputXsdSchema) {
         final SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try (var bufferedInputStream = new BufferedInputStream(new ByteArrayInputStream(inputXsdSchema))) {
+            //schemaFactory.setResourceResolver(new XsdResourceResolver());
             return Mono.just(schemaFactory.newSchema(new StreamSource(bufferedInputStream)));
         } catch (Exception ex) {
             return Mono.error(ex);

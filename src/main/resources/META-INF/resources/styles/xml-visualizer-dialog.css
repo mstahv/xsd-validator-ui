@@ -1,0 +1,38 @@
+vaadin-dialog.xml-visualizer-dialog::part(backdrop) {
+    backdrop-filter: blur(1px);
+    will-change: backdrop-filter;
+    contain: layout style paint;
+}
+
+vaadin-dialog.xml-visualizer-dialog::part(header) {
+    margin-right: var(--lumo-space-s);
+    margin-top: var(--lumo-space-s);
+    margin-left: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-s);
+    padding: 0;
+
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-flex-shrink: 0;
+    flex-shrink: 0;
+
+}
+
+vaadin-dialog.xml-visualizer-dialog::part(content) {
+    overflow-y: hidden !important;
+    overflow-x: visible !important;
+    padding: 0px !important;
+}
+
+vaadin-dialog.xml-visualizer-dialog::part(overlay) {
+   border-radius: unset;
+   width: 100vw;
+   height: 100vh;
+}
+
+vaadin-dialog.xml-visualizer-dialog {
+   /* for mobiles you need to take some more things into account, like keyboard and browser url, but this is optional and really just necessary for phones etc.
+    height: calc(100svh - env(keyboard-inset-height));
+    also reduce the inset to 0, otherwise it is like 98% */
+   --vaadin-overlay-viewport-inset: 0;
+}

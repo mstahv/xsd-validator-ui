@@ -1,4 +1,4 @@
-package com.rubn.xsdvalidator;
+package com.rubn.xsdvalidator.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

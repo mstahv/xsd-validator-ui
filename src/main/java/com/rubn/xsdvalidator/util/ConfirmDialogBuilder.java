@@ -1,12 +1,13 @@
 package com.rubn.xsdvalidator.util;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.Value;
 import lombok.extern.log4j.Log4j2;
@@ -27,19 +28,10 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WARNING;
 @Value
 public class ConfirmDialogBuilder {
 
-    public static void showWarning(String text, final Component component) {
-        ConfirmDialogBuilder.builder()
-                .withHeaderIconAndHeaderText(VaadinIcon.WARNING, WARNING)
-                .withText(text)
-                .withComponent(component)
-                .build();
-    }
-
     public static void showWarning(String text) {
         ConfirmDialogBuilder.builder()
                 .withHeaderIconAndHeaderText(VaadinIcon.WARNING, WARNING)
                 .withText(text)
-                .withComponent(null)
                 .build();
     }
 
@@ -47,7 +39,6 @@ public class ConfirmDialogBuilder {
         final var confirmDialog = ConfirmDialogBuilder.builder()
                 .withHeaderIconAndHeaderText(VaadinIcon.WARNING, WARNING)
                 .withText(text)
-                .withComponent(null)
                 .build();
         ui.addToModalComponent(confirmDialog);
     }
@@ -56,7 +47,6 @@ public class ConfirmDialogBuilder {
         final var confirmDialog = ConfirmDialogBuilder.builder()
                 .withHeaderIconAndHeaderText(VaadinIcon.INFO, INFORMATION)
                 .withText(text)
-                .withComponent(null)
                 .build();
         ui.addToModalComponent(confirmDialog);
     }
@@ -65,7 +55,6 @@ public class ConfirmDialogBuilder {
         ConfirmDialogBuilder.builder()
                 .withHeaderIconAndHeaderText(VaadinIcon.INFO, INFORMATION)
                 .withText(text)
-                .withComponent(null)
                 .build();
     }
 
@@ -73,7 +62,6 @@ public class ConfirmDialogBuilder {
         var confirmDialog = ConfirmDialogBuilder.builder()
                 .withHeaderIconAndHeaderText(VaadinIcon.WARNING, WARNING)
                 .withText(text)
-                .withComponent(null)
                 .build();
         confirmDialog.setCancelable(true);
         confirmDialog.setConfirmText("Delete");
@@ -97,18 +85,11 @@ public class ConfirmDialogBuilder {
      * 2
      */
     public interface Text {
-        ComponentStage withText(final String text);
+        Build withText(final String text);
     }
 
     /**
      * 3
-     */
-    public interface ComponentStage {
-        Build withComponent(final Component component);
-    }
-
-    /**
-     * 4
      */
     public interface Build extends IBuilder<ConfirmDialog> {
 
@@ -122,16 +103,15 @@ public class ConfirmDialogBuilder {
      * The magic builder
      */
     @Getter
-    public static class InnerBuilder implements Text, WithIconAndHeaderText, ComponentStage, Build {
+    public static class InnerBuilder implements Text, WithIconAndHeaderText, Build {
 
         private VaadinIcon icon;
         private String text;
         private String headerText;
         private final ConfirmDialog confirmDialog = new ConfirmDialog();
-        private Component component;
 
         @Override
-        public ComponentStage withText(String text) {
+        public Build withText(String text) {
             Objects.requireNonNull(text, "Text must not be null");
             this.text = text;
             return this;
@@ -147,28 +127,18 @@ public class ConfirmDialogBuilder {
         }
 
         @Override
-        public Build withComponent(Component component) {
-            this.component = component;
-            return this;
-        }
-
-        @Override
         @NonNull
         public ConfirmDialog build() {
             final HorizontalLayout headerRow = new HorizontalLayout(icon.create(), new H3(headerText));
             headerRow.setAlignItems(Alignment.CENTER);
             confirmDialog.setHeader(headerRow);
             confirmDialog.setConfirmText(OK);
-
             if (icon == VaadinIcon.WARNING) {
                 confirmDialog.setConfirmButtonTheme("error primary");
             }
-            confirmDialog.setText(text);
-
-            if (Objects.nonNull(component)) {
-                confirmDialog.setText(component);
-            }
-
+            Span span = new Span(text);
+            span.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+            confirmDialog.setText(span);
             confirmDialog.open();
             return confirmDialog;
         }

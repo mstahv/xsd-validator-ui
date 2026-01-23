@@ -16,6 +16,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.AbstractIcon;
@@ -380,6 +381,10 @@ public class Input extends Layout implements BeforeEnterObserver {
         customList.add(fileListItem);
 
         ContextMenu contextMenu = this.buildContextMenu(fileListItem);
+        contextMenu.addItem(this.createRowItemWithIcon("View code", VaadinIcon.EYE.create(), "15px"), event -> {
+            event.getSource().getUI().ifPresent(ui -> fileListItem.showXmlCode());
+        }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+        contextMenu.addSeparator();
         contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px"), event -> {
             event.getSource().getUI().ifPresent(ui -> {
                 ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
@@ -397,6 +402,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                         });
             });
         }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+
     }
 
     private FileListItem buildFileListItem(String fileName, long contentLength) {
@@ -413,7 +419,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     () -> this.selectedMainXsd // Getter
             );
         }
-        return new FileListItem(fileName, contentLength, onItemSelected);
+        return new FileListItem(fileName, contentLength, onItemSelected, mapPrefixFileNameAndContent);
     }
 
     private BiConsumer<FileListItem, Boolean> createSelectionListener(String extension, Consumer<String> stateSetter,

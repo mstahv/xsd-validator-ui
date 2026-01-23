@@ -56,4 +56,16 @@ public class MapTest {
 
     }
 
+    @Test
+    void a() {
+
+        if("INSTANT_SEPA_TRANSFER".equals(A.INSTANT_SEPA_TRANSFER.name())) {
+            System.out.println("INSTANT_SEPA_TRANSFER");
+        }
+
+    }
+
+    enum A {
+        INSTANT_SEPA_TRANSFER
+    }
 }

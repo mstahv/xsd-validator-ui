@@ -7,6 +7,7 @@ import lombok.experimental.UtilityClass;
 import java.util.Objects;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.COPY_ALT_SVG;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.RESOURCES_SVG_IMAGES;
 
 
@@ -25,6 +26,7 @@ public class SvgFactory {
         //copy-alt.svg
         final DownloadHandler downloadHandler = DownloadHandler.forClassResource(SvgFactory.class, RESOURCES_SVG_IMAGES + COPY_ALT_SVG);
         final SvgIcon icon = new SvgIcon(downloadHandler);
+        icon.getStyle().setCursor(CURSOR_POINTER);
         icon.setSize("25px");
         return icon;
     }

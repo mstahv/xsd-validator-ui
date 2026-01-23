@@ -1,6 +1,6 @@
 package com.rubn.xsdvalidator.service;
 
-import com.rubn.xsdvalidator.SupportFilesEnum;
+import com.rubn.xsdvalidator.enums.SupportFilesEnum;
 import com.rubn.xsdvalidator.records.DecompressedFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -55,13 +55,16 @@ public class DecompressionService {
     private List<DecompressedFile> decompressZip(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
-        try (ZipInputStream zis = new ZipInputStream(inputStream)) {
+        try (ZipInputStream zis = new ZipInputStream(inputStream);
+        final FastByteArrayOutputStream fbaos = new FastByteArrayOutputStream()) {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
                 if (!entry.isDirectory()) {
-                    byte[] content = this.readAllBytes(zis);
+                    zis.transferTo(fbaos);
+                    byte[] content = fbaos.toByteArray();
                     files.add(new DecompressedFile(entry.getName(), content, entry.getSize()));
+                    fbaos.reset();
                     log.info("Descomprimido: {} ({} bytes)", entry.getName(), entry.getSize());
                 }
                 zis.closeEntry();
@@ -78,7 +81,7 @@ public class DecompressionService {
     private List<DecompressedFile> decompressRar(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
-        Path tempFile = this.toTempFile(inputStream, "tempRarArchive-", ".rar");
+        Path tempFile = this.toTempFile(inputStream, "tempRarArchive-", SupportFilesEnum.RAR.getSupportFile());
         try {
             try (RandomAccessFile raf = new RandomAccessFile(tempFile.toFile(), "r")) {// open for reading
                 try (IInArchive inArchive = SevenZip.openInArchive(null, // autodetect archive type
