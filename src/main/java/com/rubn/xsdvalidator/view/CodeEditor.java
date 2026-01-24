@@ -7,15 +7,15 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.react.ReactAdapterComponent;
 import com.vaadin.flow.function.SerializableConsumer;
 
-@NpmPackage(value = "react-simple-code-editor", version = "0.13.1")
-@NpmPackage(value = "prismjs", version = "1.29.0")
+@NpmPackage(value = "react-simple-code-editor", version = "0.14.1")
+@NpmPackage(value = "prismjs", version = "1.30.0")
 @JsModule("./simple-code-editor.tsx")
 @Tag("simple-code-editor")
 public class CodeEditor extends ReactAdapterComponent implements HasSize {
 
     public CodeEditor() {
         super();
-        this.setWidthFull();
+        //this.setWidthFull();
     }
 
     /**
