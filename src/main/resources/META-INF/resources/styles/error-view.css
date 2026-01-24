@@ -1,0 +1,10 @@
+.error-image {
+    border-radius: 5px;
+    transition: box-shadow .3s;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+
+.error-image:hover {
+    box-shadow: var(--custom-image-shadow);
+}

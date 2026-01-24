@@ -18,10 +18,6 @@ public class CodeEditor extends ReactAdapterComponent implements HasSize {
         this.setWidthFull();
     }
 
-    public void setShowLineNumbers(boolean showLineNumbers) {
-        setState("showLineNumbers", showLineNumbers);
-    }
-
     /**
      * Envía texto al editor (Desde Java -> Navegador)
      */

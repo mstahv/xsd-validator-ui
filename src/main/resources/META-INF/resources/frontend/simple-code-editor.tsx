@@ -1,5 +1,5 @@
 import { ReactAdapterElement, RenderHooks } from 'Frontend/generated/flow/ReactAdapter';
-import React from 'react';
+import React, { ReactElement } from 'react';
 import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-clike';
@@ -33,7 +33,7 @@ function MyReactEditor({ content, onContentChange }) {
 }
 
 class SimpleCodeEditorElement extends ReactAdapterElement {
-    protected override render(hooks: RenderHooks) {
+    protected render(hooks: RenderHooks): ReactElement | null {
         const [content, setContent] = hooks.useState<string>("content");
 
         return (

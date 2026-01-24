@@ -24,8 +24,7 @@ public class SvgFactory {
      */
     public static SvgIcon createCopyButtonFromSvg() {
         //copy-alt.svg
-        final DownloadHandler downloadHandler = DownloadHandler.forClassResource(SvgFactory.class, RESOURCES_SVG_IMAGES + COPY_ALT_SVG);
-        final SvgIcon icon = new SvgIcon(downloadHandler);
+        final SvgIcon icon = new SvgIcon("svg-images/" + COPY_ALT_SVG);
         icon.getStyle().setCursor(CURSOR_POINTER);
         icon.setSize("25px");
         return icon;
@@ -40,8 +39,7 @@ public class SvgFactory {
      */
     public static SvgIcon createIconFromSvg(String fileName, String size, String customHeight) {
         Objects.requireNonNull(fileName, "fileName is null, we must put it in the svg-icons folder");
-        final DownloadHandler downloadHandler = DownloadHandler.forClassResource(SvgFactory.class, RESOURCES_SVG_IMAGES + fileName);
-        var icon = new SvgIcon(downloadHandler);
+        var icon = new SvgIcon("svg-images/" + fileName);
         icon.setSize(size);
         if (Objects.nonNull(customHeight)) {
             icon.getStyle().set("height", customHeight);

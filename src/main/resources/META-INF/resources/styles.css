@@ -7,6 +7,7 @@
 @import url("./styles/about.css");
 @import url("./styles/search-dialog.css");
 @import url("./styles/xml-visualizer-dialog.css");
+@import url("./styles/error-view.css");
 
 html {
   --lumo-font-family: 'Arimo', sans-serif;

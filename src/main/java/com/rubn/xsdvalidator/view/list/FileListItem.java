@@ -18,6 +18,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Background;
@@ -38,6 +39,8 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CL
 public class FileListItem extends ListItem {
 
     private Dialog dialog = new Dialog();
+    private final ProgressBar progressBar = new ProgressBar();
+    private final CodeEditor codeEditor = new CodeEditor();
     private final Checkbox checkbox;
     private final String fileName;
     private final Map<String, byte[]> mapPrefixFileNameAndContent;
@@ -75,7 +78,7 @@ public class FileListItem extends ListItem {
         setGap(Layout.Gap.SMALL);
 
         this.dialog = this.buildDialog();
-        super.addDoubleClickListener(event -> dialog.open());
+        super.addDoubleClickListener(event -> this.showXmlCode());
 
     }
 
@@ -113,6 +116,8 @@ public class FileListItem extends ListItem {
 
     public void showXmlCode() {
         this.dialog.open();
+        this.codeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
+        this.progressBar.setVisible(false);
     }
 
     public void closeDialog() {
@@ -156,19 +161,17 @@ public class FileListItem extends ListItem {
         });
         dialog.addClosedListener(event -> copyButton.setIcon(copyButtonIcon));
         copyButton.setTooltipText("Copy filename!");
-        dialog.getHeader().add(spanFileNameTitle, copyButton, closeButton);
+        this.progressBar.setWidth("10%");
+        this.progressBar.setVisible(true);
+        this.progressBar.setIndeterminate(true);
+        dialog.getHeader().add(spanFileNameTitle, copyButton, this.progressBar, closeButton);
 
-        final CodeEditor codeEditor = new CodeEditor();
-        codeEditor.setShowLineNumbers(true);
-        codeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
         codeEditor.addValueChangeListener(event -> {
-            //log.info("Event -> {}", event);
+            //this.progressBar.setVisible(false);
         });
         dialog.add(codeEditor);
-//        dialog.add(this.buildSyntaxHighlighter());
         //Footer with update code ?
-
-        final Button button = new Button("Update", (event) -> {
+        final Button button = new Button("Save", (event) -> {
             Notification.show("Not yet implemented!!!").addThemeVariants(NotificationVariant.LUMO_PRIMARY);
             //log.info("Content: {}", codeEditor.getContent());
         });
