@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.view;
 
+import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.JsModule;
@@ -17,8 +18,7 @@ public class SimpleCodeEditor extends ReactAdapterComponent implements HasSize {
 
     public SimpleCodeEditor() {
         super();
-        // Configuración inicial por defecto
-        setTheme("vs-dark");
+        setTheme(XsdValidatorConstants.VS_DARK);
         setWordWrap(true);
     }
 

@@ -405,7 +405,7 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private FileListItem buildFileListItem(String fileName, long contentLength) {
-        BiConsumer<FileListItem, Boolean> onItemSelected = null;
+        BiConsumer<FileListItem, Boolean> onItemSelected;
         String lowerName = fileName.toLowerCase();
         if (lowerName.endsWith(XML)) {
             onItemSelected = createSelectionListener(XML,

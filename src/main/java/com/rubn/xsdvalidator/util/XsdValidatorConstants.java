@@ -105,4 +105,6 @@ public class XsdValidatorConstants {
     public static final String XSD_VALIDATOR_UI_JAR = "xsd-validator-ui.*jar";
 
     public static final String SVG_IMAGES = "svg-images/";
+    public static final String VS_DARK = "vs-dark";
+    public static final String LIGHT = "ligth";
 }

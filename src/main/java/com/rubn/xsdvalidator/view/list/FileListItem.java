@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.LIGHT;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.VS_DARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CLIPBOARD;
 
 @Log4j2
@@ -204,7 +206,7 @@ public class FileListItem extends ListItem {
         iconTheme.getStyle().setCursor(CURSOR_POINTER);
         iconTheme.addClassName(FontSize.SMALL);
         iconTheme.addClickListener(event -> {
-            String theme = simpleCodeEditor.getTheme().equals("vs-dark") ? "light" : "vs-dark";
+            String theme = simpleCodeEditor.getTheme().equals(VS_DARK) ? LIGHT : VS_DARK;
             simpleCodeEditor.setTheme(theme);
         });
         return iconTheme;
