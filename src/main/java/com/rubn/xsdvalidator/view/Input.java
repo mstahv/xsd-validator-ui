@@ -29,6 +29,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.server.Command;
@@ -156,20 +157,19 @@ public class Input extends Layout implements BeforeEnterObserver {
         add(divHeader, verticalLayoutArea, actions);
     }
 
-    public void openXsdSearchDialog() {
+    public SearchPopover buildPopover(TextField searchTextField) {
         // Filter by xsd and xml
         List<String> xsdXmlFiles = mapPrefixFileNameAndContent.keySet().stream()
                 .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
                 .sorted()
                 .toList();
 
-        if (xsdXmlFiles.isEmpty()) {
-            ConfirmDialogBuilder.showWarning("No files have been uploaded.");
-            return;
-        }
-        SearchDialog dialog = new SearchDialog(xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
+//        if (xsdXmlFiles.isEmpty()) {
+//            ConfirmDialogBuilder.showWarning("No files have been uploaded.");
+//            return null;
+//        }
+        return new SearchPopover(searchTextField, xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
                 selectedSet -> selectedSet.forEach(this::selectXsdFromCode));
-        dialog.open();
     }
 
     private void selectXsdFromCode(String fileName) {

@@ -5,6 +5,7 @@ import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.charts.model.Dial;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
@@ -13,12 +14,15 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -36,21 +40,24 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 /**
  * @author rubn
  */
-public class SearchDialog extends Dialog {
+public class SearchPopover extends Popover {
 
     public static final String BADGE_PILL = "badge pill";
     public static final String THEME_INACTIVE = "contrast";
-    private final TextField searchField = new TextField();
     private final Div divCenterSpanNotSearch = new Div();
     private final MultiSelectListBox<String> listBox = new MultiSelectListBox<>();
     private final Set<String> currentSelection = new ConcurrentSkipListSet<>();
     private final List<String> allXsdXmlFiles;
+    private final TextField searchField;
 
-    public SearchDialog(List<String> rawFileList, String initialXsdSelection,
-                        String initialXmlSelection,
-                        Consumer<Set<String>> onSelectCallback) {
+    public SearchPopover(TextField searchField, List<String> rawFileList, String initialXsdSelection,
+                         String initialXmlSelection,
+                         Consumer<Set<String>> onSelectCallback) {
+        this.searchField = searchField;
         addClassName("search-dialog-content");
         setWidth("500px");
+        setModal(false);
+        setPosition(PopoverPosition.BOTTOM_END);
 
         Span spanNotSearchFound = new Span("Item not found!");
         this.divCenterSpanNotSearch.add(spanNotSearchFound);
@@ -58,15 +65,7 @@ public class SearchDialog extends Dialog {
                 LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
 
-        searchField.setPlaceholder("Filter [xsd, xml]");
-        searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
-        searchField.setClearButtonVisible(true);
-        searchField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        searchField.addClassName(LumoUtility.TextColor.SECONDARY);
-        searchField.setWidthFull();
-        searchField.setValueChangeMode(ValueChangeMode.EAGER);
-        searchField.addValueChangeListener(e -> this.filterList(e.getValue()));
-        searchField.setClearButtonVisible(true);
+        this.searchField.addValueChangeListener(e -> this.filterList(e.getValue()));
 
         if (initialXsdSelection != null && rawFileList.contains(initialXsdSelection)) {
             currentSelection.add(initialXsdSelection);
@@ -131,18 +130,26 @@ public class SearchDialog extends Dialog {
         btnXsd.addClickListener(listener);
         filtersBadges.add(btnXml, btnXsd);
 
-        final Hr hrLine = new Hr();
-        hrLine.addClassName("hr-line");
+        final Hr hrLine = getHr();
 
-        VerticalLayout layout = new VerticalLayout(searchField, filtersBadges, hrLine, listBox);
+        final HorizontalLayout rowFooter = new HorizontalLayout();
+        rowFooter.getStyle().setPadding("var(--lumo-space-xs)");
+        rowFooter.setSpacing("var(--lumo-space-s)");
+        this.buildSpanCounters().forEach(rowFooter::add);
+        final Hr hrLineFooter = getHr();
+
+        VerticalLayout layout = new VerticalLayout(filtersBadges, hrLine, listBox, hrLineFooter, rowFooter);
         layout.setPadding(false);
         layout.setSpacing(false);
         layout.setMargin(false);
         super.add(layout);
-        searchField.focus();
 
-        this.buildSpanCounters().forEach(span -> super.getFooter().add(span));
+    }
 
+    private static @NonNull Hr getHr() {
+        final Hr hrLine = new Hr();
+        hrLine.addClassName("hr-line");
+        return hrLine;
     }
 
     private void configureBadgeButton(com.vaadin.flow.component.html.Span span) {

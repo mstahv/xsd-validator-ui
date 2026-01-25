@@ -6,14 +6,18 @@ import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.Shortcuts;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Main;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -59,27 +63,39 @@ class XsdValidatorView extends Main {
         return span;
     }
 
-    private Button buildSearch(Input input) {
-        final Button buttonSearchXsd = new Button();
-        Span animatedText = new Span();
-        animatedText.addClassName("search-animation");
-        buttonSearchXsd.getStyle().setCursor(CURSOR_POINTER);
-        buttonSearchXsd.getStyle().setBorder("1px var(--lumo-utility-border-style,solid) var(--lumo-utility-border-color,var(--lumo-contrast-10pct))");
-        buttonSearchXsd.addClassName(LumoUtility.TextColor.SECONDARY);
-        Span spanShortCut = new Span("Ctrl K");
+    private TextField buildSearch(Input input) {
+        final TextField searchField = new TextField();
+        searchField.setWidth("500px");
+        searchField.setClearButtonVisible(true);
+        final SearchPopover searchPopover = input.buildPopover(searchField);
+        searchPopover.setTarget(searchField);
+
+        searchField.getStyle().setCursor(CURSOR_POINTER);
+        //buttonSearchXsd.getStyle().setBorder("1px var(--lumo-utility-border-style,solid) var(--lumo-utility-border-color,var(--lumo-contrast-10pct))");
+        searchField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        searchField.setValueChangeMode(ValueChangeMode.EAGER);
+        searchField.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+        final Span spanShortCut = new Span("Ctrl K");
         spanShortCut.getElement().getThemeList().add("badge small pill constrast");
         spanShortCut.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
-        Shortcuts.addShortcutListener(buttonSearchXsd, input::openXsdSearchDialog,
+        Shortcuts.addShortcutListener(searchField, listener -> searchPopover.open(),
                 Key.KEY_K, KeyModifier.CONTROL);
-        var row = new HorizontalLayout(new Span("Search:"), animatedText, spanShortCut);
+
+        final Span animatedText = new Span();
+        animatedText.addClassName("search-animation");
+
+        final Icon icon = VaadinIcon.SEARCH.create();
+        icon.addClassNames(LumoUtility.FontSize.SMALL);
+
+        var row = new HorizontalLayout(icon, animatedText);
         row.setSpacing("var(--lumo-space-xs)");
         row.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        buttonSearchXsd.setSuffixComponent(row);
-        buttonSearchXsd.setPrefixComponent(VaadinIcon.SEARCH.create());
-        buttonSearchXsd.addThemeVariants(ButtonVariant.LUMO_SMALL);
-        buttonSearchXsd.setTooltipText("Search xsd or xml");
-        buttonSearchXsd.addClickListener(e -> input.openXsdSearchDialog());
-        return buttonSearchXsd;
+        searchField.setPrefixComponent(row);
+        searchField.setSuffixComponent(spanShortCut);
+        searchField.addClassName(LumoUtility.FontSize.SMALL);
+        searchField.setTooltipText("Search xsd or xml");
+
+        return searchField;
     }
 
 }
