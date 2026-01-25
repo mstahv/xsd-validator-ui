@@ -39,6 +39,7 @@ import com.vaadin.flow.server.streams.InMemoryUploadHandler;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.server.streams.UploadMetadata;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
@@ -96,9 +97,12 @@ public class Input extends Layout implements BeforeEnterObserver {
     private Span spanWordError;
     private String selectedXmlFile;
     private String selectedMainXsd;
+    @Getter
+    private SearchPopover searchPopover;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
-                 final DecompressionService decompressionService) {
+                 final DecompressionService decompressionService,
+                 final TextField searchField) {
         this.validationXsdSchemaService = validationXsdSchemaService;
         this.decompressionService = decompressionService;
         addClassName("input-layout");
@@ -154,22 +158,22 @@ public class Input extends Layout implements BeforeEnterObserver {
         Layout actions = new Layout(this.uploader, validateButton);
         actions.addClassName("actions");
 
+        this.searchPopover =  this.buildPopover(searchField, List.of());
+
         add(divHeader, verticalLayoutArea, actions);
     }
 
-    public SearchPopover buildPopover(TextField searchTextField) {
-        // Filter by xsd and xml
-        List<String> xsdXmlFiles = mapPrefixFileNameAndContent.keySet().stream()
-                .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
-                .sorted()
-                .toList();
-
-//        if (xsdXmlFiles.isEmpty()) {
-//            ConfirmDialogBuilder.showWarning("No files have been uploaded.");
-//            return null;
-//        }
+    public SearchPopover buildPopover(TextField searchTextField, List<String> xsdXmlFiles) {
         return new SearchPopover(searchTextField, xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
                 selectedSet -> selectedSet.forEach(this::selectXsdFromCode));
+    }
+
+    private List<String> getXsdXmlFiles() {
+       return mapPrefixFileNameAndContent.keySet()
+               .stream()
+               .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
+               .sorted()
+               .toList();
     }
 
     private void selectXsdFromCode(String fileName) {
@@ -293,12 +297,15 @@ public class Input extends Layout implements BeforeEnterObserver {
                         log.error(error.getMessage());
                         ConfirmDialogBuilder.showWarning("Upload failed: " + error.getMessage());
                     }
+                    this.searchPopover.updateItems(this.getXsdXmlFiles());
                 })
                 .whenStart(() -> {
                     log.info("Upload started");
                     this.uploader.clearFileList();
                 })
-                .whenComplete((transferContext, aBoolean) -> log.info("Upload complete"));
+                .whenComplete((transferContext, aBoolean) -> {
+                    log.info("Upload complete");
+                });
     }
 
     private void validateXmlInputWithXsdSchema() {

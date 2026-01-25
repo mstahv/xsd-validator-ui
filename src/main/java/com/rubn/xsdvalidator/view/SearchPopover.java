@@ -5,12 +5,9 @@ import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.charts.model.Dial;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -18,12 +15,12 @@ import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import lombok.extern.log4j.Log4j2;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -40,6 +37,7 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 /**
  * @author rubn
  */
+@Log4j2
 public class SearchPopover extends Popover {
 
     public static final String BADGE_PILL = "badge pill";
@@ -47,8 +45,10 @@ public class SearchPopover extends Popover {
     private final Div divCenterSpanNotSearch = new Div();
     private final MultiSelectListBox<String> listBox = new MultiSelectListBox<>();
     private final Set<String> currentSelection = new ConcurrentSkipListSet<>();
-    private final List<String> allXsdXmlFiles;
+    private final List<Span> listSpanCounters;
     private final TextField searchField;
+
+    private List<String> allXsdXmlFiles;
 
     public SearchPopover(TextField searchField, List<String> rawFileList, String initialXsdSelection,
                          String initialXmlSelection,
@@ -65,7 +65,12 @@ public class SearchPopover extends Popover {
                 LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
 
-        this.searchField.addValueChangeListener(e -> this.filterList(e.getValue()));
+        this.searchField.addValueChangeListener(e -> {
+            if (!this.isOpened()) {
+                this.setOpened(true); // Mejor chequeo
+            }
+            this.filterList(e.getValue());
+        });
 
         if (initialXsdSelection != null && rawFileList.contains(initialXsdSelection)) {
             currentSelection.add(initialXsdSelection);
@@ -135,7 +140,9 @@ public class SearchPopover extends Popover {
         final HorizontalLayout rowFooter = new HorizontalLayout();
         rowFooter.getStyle().setPadding("var(--lumo-space-xs)");
         rowFooter.setSpacing("var(--lumo-space-s)");
-        this.buildSpanCounters().forEach(rowFooter::add);
+        this.updateCounters();
+        this.listSpanCounters = this.buildSpanCounters();
+        this.listSpanCounters.forEach(rowFooter::add);
         final Hr hrLineFooter = getHr();
 
         VerticalLayout layout = new VerticalLayout(filtersBadges, hrLine, listBox, hrLineFooter, rowFooter);
@@ -146,7 +153,20 @@ public class SearchPopover extends Popover {
 
     }
 
-    private static @NonNull Hr getHr() {
+    public void updateItems(List<String> newItems) {
+        this.allXsdXmlFiles = new ArrayList<>(newItems);
+        this.listBox.setItems(this.allXsdXmlFiles);
+        // Volvemos a filtrar usando lo que tenga el TextField en ese momento
+        filterList(searchField.getValue());
+        this.updateCounters();
+    }
+
+    @Override
+    public void open() {
+        super.open();
+    }
+
+    private @NonNull Hr getHr() {
         final Hr hrLine = new Hr();
         hrLine.addClassName("hr-line");
         return hrLine;
@@ -235,6 +255,31 @@ public class SearchPopover extends Popover {
         span.addClassNames(LumoUtility.TextColor.SECONDARY);
         span.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
         return span;
+    }
+
+    private void updateCounters() {
+        if (listSpanCounters != null) {
+
+            long countXsd = allXsdXmlFiles
+                    .stream()
+                    .filter(name -> name.toLowerCase().endsWith(XSD))
+                    .count();
+            long countXml = allXsdXmlFiles
+                    .stream()
+                    .filter(name -> name.toLowerCase().endsWith(XML))
+                    .count();
+
+            this.listSpanCounters
+                    .forEach((span) -> {
+                        if (span.getText().contains("Total: ")) {
+                            span.setText("Total: " + allXsdXmlFiles.size());
+                        } else if (span.getText().contains("xsd: ")) {
+                            span.setText("xsd: " + countXsd);
+                        } else {
+                            span.setText("xml: " + countXml);
+                        }
+                    });
+        }
     }
 
 }

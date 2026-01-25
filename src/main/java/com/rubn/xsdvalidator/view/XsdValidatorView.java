@@ -12,8 +12,6 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.popover.Popover;
-import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -40,13 +38,14 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 @JsModule(COPY_TO_CLIPBOARD)
 class XsdValidatorView extends Main {
 
+    private final TextField searchField = new TextField();
+
     public XsdValidatorView(final ValidationXsdSchemaService validationXsdSchemaService,
                             final DecompressionService decompressionService) {
         setSizeFull();
         getStyle().setOverflow(Style.Overflow.VISIBLE);
 
-
-        final Input input = new Input(validationXsdSchemaService, decompressionService);
+        final Input input = new Input(validationXsdSchemaService, decompressionService, searchField);
         add(new ViewToolbar(StringUtils.EMPTY, this.buildSearch(input), this.createInfoIcon()));
         add(input);
     }
@@ -64,14 +63,14 @@ class XsdValidatorView extends Main {
     }
 
     private TextField buildSearch(Input input) {
-        final TextField searchField = new TextField();
+
         searchField.setWidth("500px");
         searchField.setClearButtonVisible(true);
-        final SearchPopover searchPopover = input.buildPopover(searchField);
+        final SearchPopover searchPopover = input.getSearchPopover();
         searchPopover.setTarget(searchField);
 
         searchField.getStyle().setCursor(CURSOR_POINTER);
-        //buttonSearchXsd.getStyle().setBorder("1px var(--lumo-utility-border-style,solid) var(--lumo-utility-border-color,var(--lumo-contrast-10pct))");
+//        searchField.getStyle().setBorder("1px var(--lumo-utility-border-style, solid) var(--lumo-utility-border-color, var(--lumo-contrast-10pct))");
         searchField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         searchField.setValueChangeMode(ValueChangeMode.EAGER);
         searchField.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
@@ -85,7 +84,7 @@ class XsdValidatorView extends Main {
         animatedText.addClassName("search-animation");
 
         final Icon icon = VaadinIcon.SEARCH.create();
-        icon.addClassNames(LumoUtility.FontSize.SMALL);
+        icon.setSize("15px");
 
         var row = new HorizontalLayout(icon, animatedText);
         row.setSpacing("var(--lumo-space-xs)");
