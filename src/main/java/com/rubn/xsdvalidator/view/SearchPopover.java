@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Consumer;
@@ -47,13 +48,16 @@ public class SearchPopover extends Popover {
     private final Set<String> currentSelection = new ConcurrentSkipListSet<>();
     private final List<Span> listSpanCounters;
     private final TextField searchField;
+    private final Map<String, byte[]> mapPrefixFileNameAndContent;
 
     private List<String> allXsdXmlFiles;
 
     public SearchPopover(TextField searchField, List<String> rawFileList, String initialXsdSelection,
                          String initialXmlSelection,
-                         Consumer<Set<String>> onSelectCallback) {
+                         Consumer<Set<String>> onSelectCallback,
+                         final Map<String, byte[]> mapPrefixFileNameAndContent) {
         this.searchField = searchField;
+        this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
         addClassName("search-dialog-content");
         setWidth("500px");
         setModal(false);
@@ -97,10 +101,16 @@ public class SearchPopover extends Popover {
             String fileName = paramfileName.contains(XML) ? "file-xml-icon.svg" : "xsd.svg";
             SvgIcon icon = SvgFactory.createIconFromSvg(fileName, "40px", null);
             icon.setSize("40px");
-            icon.getStyle().set("margin-right", "8px");
+            int size = new String(mapPrefixFileNameAndContent.get(paramfileName)).length();
             Span spanParamFileName = new Span(paramfileName);
             spanParamFileName.addClassName(LumoUtility.TextColor.SECONDARY);
-            return new Span(icon, spanParamFileName);
+            Span spanSize = new Span((size) + "KB");
+            spanSize.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.XXSMALL);
+            spanSize.getElement().getThemeList().add("badge pill small");
+            final VerticalLayout verticalLayout = new VerticalLayout(spanParamFileName, spanSize);
+            verticalLayout.setPadding(false);
+            verticalLayout.setSpacing(false);
+            return new HorizontalLayout(icon, verticalLayout);
         }));
 
         listBox.addValueChangeListener(event -> {

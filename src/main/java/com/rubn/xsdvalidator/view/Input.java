@@ -165,7 +165,7 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     public SearchPopover buildPopover(TextField searchTextField, List<String> xsdXmlFiles) {
         return new SearchPopover(searchTextField, xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
-                selectedSet -> selectedSet.forEach(this::selectXsdFromCode));
+                selectedSet -> selectedSet.forEach(this::selectXsdFromCode), mapPrefixFileNameAndContent);
     }
 
     private List<String> getXsdXmlFiles() {
@@ -280,6 +280,7 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private InMemoryUploadHandler buildUploadHandler() {
+        //Fixme use TransferProgressAwareHandler
         return UploadHandler.inMemory((metadata, data) -> {
                     //without buffered, prevent a SAXException
                     try (final InputStream inputStream = new ByteArrayInputStream(data);
@@ -298,6 +299,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                         ConfirmDialogBuilder.showWarning("Upload failed: " + error.getMessage());
                     }
                     this.searchPopover.updateItems(this.getXsdXmlFiles());
+                    ConfirmDialogBuilder.showInformation("Upload complete");
                 })
                 .whenStart(() -> {
                     log.info("Upload started");

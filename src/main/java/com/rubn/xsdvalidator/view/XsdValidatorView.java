@@ -3,6 +3,7 @@ package com.rubn.xsdvalidator.view;
 import com.rubn.xsdvalidator.service.DecompressionService;
 import com.rubn.xsdvalidator.service.ValidationXsdSchemaService;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
+import com.vaadin.flow.component.FocusOption;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.Shortcuts;
@@ -77,8 +78,10 @@ class XsdValidatorView extends Main {
         final Span spanShortCut = new Span("Ctrl K");
         spanShortCut.getElement().getThemeList().add("badge small pill constrast");
         spanShortCut.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
-        Shortcuts.addShortcutListener(searchField, listener -> searchPopover.open(),
-                Key.KEY_K, KeyModifier.CONTROL);
+        Shortcuts.addShortcutListener(searchField, listener -> {
+                    searchPopover.open();
+                    searchField.focus();
+                }, Key.KEY_K, KeyModifier.CONTROL);
 
         final Span animatedText = new Span();
         animatedText.addClassName("search-animation");
