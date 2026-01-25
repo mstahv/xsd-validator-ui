@@ -13,9 +13,9 @@ import com.vaadin.flow.function.SerializableConsumer;
 @NpmPackage(value = "@monaco-editor/react", version = "4.7.0")
 @JsModule("./simple-code-editor.tsx")
 @Tag("simple-code-editor")
-public class CodeEditor extends ReactAdapterComponent implements HasSize {
+public class SimpleCodeEditor extends ReactAdapterComponent implements HasSize {
 
-    public CodeEditor() {
+    public SimpleCodeEditor() {
         super();
         // Configuración inicial por defecto
         setTheme("vs-dark");

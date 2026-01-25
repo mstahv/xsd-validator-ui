@@ -3,7 +3,7 @@ package com.rubn.xsdvalidator.view.list;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
-import com.rubn.xsdvalidator.view.CodeEditor;
+import com.rubn.xsdvalidator.view.SimpleCodeEditor;
 import com.rubn.xsdvalidator.view.Span;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -26,6 +26,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.NonNull;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -40,7 +41,7 @@ public class FileListItem extends ListItem {
 
     private Dialog dialog = new Dialog();
     private final ProgressBar progressBar = new ProgressBar();
-    private final CodeEditor codeEditor = new CodeEditor();
+    private final SimpleCodeEditor simpleCodeEditor = new SimpleCodeEditor();
     private final Checkbox checkbox;
     private final String fileName;
     private final Map<String, byte[]> mapPrefixFileNameAndContent;
@@ -116,7 +117,7 @@ public class FileListItem extends ListItem {
 
     public void showXmlCode() {
         this.dialog.open();
-        this.codeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
+        this.simpleCodeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
         this.progressBar.setVisible(false);
     }
 
@@ -128,18 +129,9 @@ public class FileListItem extends ListItem {
         dialog.setSizeFull();
         dialog.setCloseOnEsc(true);
         dialog.addClassName("xml-visualizer-dialog");
-        final Button closeButton = new Button(VaadinIcon.CLOSE.create());
-        closeButton.setTooltipText("Close");
-        closeButton.getStyle().setCursor(CURSOR_POINTER);
-        closeButton.addClassName(LumoUtility.Margin.Left.AUTO);
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        closeButton.addClickListener(e -> this.closeDialog());
-        final Icon iconClose = VaadinIcon.ARROW_LEFT.create();
-        Tooltip.forComponent(iconClose).setText("Back");
-        iconClose.getStyle().setCursor(CURSOR_POINTER);
-        iconClose.addClassName(LumoUtility.TextColor.TERTIARY);
-        iconClose.addClickListener(event -> this.closeDialog());
-        dialog.getHeader().add(iconClose);
+        final Button closeButton = this.buildCloseButton();
+        final Icon iconBackLeft = this.buildBackIconLeft();
+        dialog.getHeader().add(iconBackLeft);
         //Header with title
         final Span spanFileNameTitle = new Span(fileName);
         spanFileNameTitle.addClassNames(FontSize.LARGE, LumoUtility.FontWeight.BOLD);
@@ -169,10 +161,10 @@ public class FileListItem extends ListItem {
         SvgIcon iconWordWrap = this.buildIconWordWrap();
         dialog.getHeader().add(spanFileNameTitle, copyButton, iconTheme, iconWordWrap, this.progressBar, closeButton);
 
-        codeEditor.addValueChangeListener(event -> {
+        simpleCodeEditor.addValueChangeListener(event -> {
             //this.progressBar.setVisible(false);
         });
-        dialog.add(codeEditor);
+        dialog.add(simpleCodeEditor);
         //Footer with update code ?
         final Button button = new Button("Save", (event) -> {
             Notification.show("Not yet implemented!!!").addThemeVariants(NotificationVariant.LUMO_PRIMARY);
@@ -185,6 +177,25 @@ public class FileListItem extends ListItem {
         return dialog;
     }
 
+    private @NonNull Icon buildBackIconLeft() {
+        final Icon iconClose = VaadinIcon.ARROW_LEFT.create();
+        Tooltip.forComponent(iconClose).setText("Back");
+        iconClose.getStyle().setCursor(CURSOR_POINTER);
+        iconClose.addClassName(LumoUtility.TextColor.TERTIARY);
+        iconClose.addClickListener(event -> this.closeDialog());
+        return iconClose;
+    }
+
+    private @NonNull Button buildCloseButton() {
+        final Button closeButton = new Button(VaadinIcon.CLOSE.create());
+        closeButton.setTooltipText("Close");
+        closeButton.getStyle().setCursor(CURSOR_POINTER);
+        closeButton.addClassName(LumoUtility.Margin.Left.AUTO);
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+        closeButton.addClickListener(e -> this.closeDialog());
+        return closeButton;
+    }
+
     private Icon buildIconTheme() {
         final Icon iconTheme = VaadinIcon.ADJUST.create();
         Tooltip.forComponent(iconTheme)
@@ -193,8 +204,8 @@ public class FileListItem extends ListItem {
         iconTheme.getStyle().setCursor(CURSOR_POINTER);
         iconTheme.addClassName(FontSize.SMALL);
         iconTheme.addClickListener(event -> {
-            String theme = codeEditor.getTheme().equals("vs-dark") ? "light" : "vs-dark";
-            codeEditor.setTheme(theme);
+            String theme = simpleCodeEditor.getTheme().equals("vs-dark") ? "light" : "vs-dark";
+            simpleCodeEditor.setTheme(theme);
         });
         return iconTheme;
     }
@@ -205,7 +216,7 @@ public class FileListItem extends ListItem {
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
                 .withText("word wrap");
         iconTheme.getStyle().setCursor(CURSOR_POINTER);
-        iconTheme.addClickListener(event -> codeEditor.setWordWrap(!codeEditor.getWordWrap()));
+        iconTheme.addClickListener(event -> simpleCodeEditor.setWordWrap(!simpleCodeEditor.getWordWrap()));
         return iconTheme;
     }
 

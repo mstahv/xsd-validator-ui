@@ -1,14 +1,13 @@
 package com.rubn.xsdvalidator.util;
 
 import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import lombok.experimental.UtilityClass;
 
 import java.util.Objects;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.COPY_ALT_SVG;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.RESOURCES_SVG_IMAGES;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.SVG_IMAGES;
 
 
 /**
@@ -24,7 +23,7 @@ public class SvgFactory {
      */
     public static SvgIcon createCopyButtonFromSvg() {
         //copy-alt.svg
-        final SvgIcon icon = new SvgIcon("svg-images/" + COPY_ALT_SVG);
+        final SvgIcon icon = new SvgIcon(SVG_IMAGES + COPY_ALT_SVG);
         icon.getStyle().setCursor(CURSOR_POINTER);
         icon.setSize("25px");
         return icon;
@@ -39,7 +38,7 @@ public class SvgFactory {
      */
     public static SvgIcon createIconFromSvg(String fileName, String size, String customHeight) {
         Objects.requireNonNull(fileName, "fileName is null, we must put it in the svg-icons folder");
-        var icon = new SvgIcon("svg-images/" + fileName);
+        var icon = new SvgIcon(SVG_IMAGES + fileName);
         icon.setSize(size);
         if (Objects.nonNull(customHeight)) {
             icon.getStyle().set("height", customHeight);

@@ -104,4 +104,5 @@ public class XsdValidatorConstants {
     public static final String SUPPORT_FILES = "[xml, xsd, zip, rar, 7z]";
     public static final String XSD_VALIDATOR_UI_JAR = "xsd-validator-ui.*jar";
 
+    public static final String SVG_IMAGES = "svg-images/";
 }
