@@ -380,7 +380,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         customList.add(fileListItem);
 
         ContextMenu contextMenu = this.buildContextMenu(fileListItem);
-        contextMenu.addItem(this.createRowItemWithIcon("View code", VaadinIcon.EYE.create(), "15px"), event -> {
+        contextMenu.addItem(this.createRowItemWithIcon("Edit", VaadinIcon.PENCIL.create(), "15px"), event -> {
             event.getSource().getUI().ifPresent(ui -> fileListItem.showXmlCode());
         }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
         contextMenu.addSeparator();

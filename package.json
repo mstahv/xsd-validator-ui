@@ -3,6 +3,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "dependencies": {
+    "@monaco-editor/react": "4.7.0",
     "@vaadin/aura": "25.0.1",
     "@vaadin/common-frontend": "0.0.19",
     "@vaadin/react-components": "25.0.1",
@@ -14,12 +15,10 @@
     "date-fns": "4.1.0",
     "lit": "3.3.1",
     "ol": "10.6.1",
-    "prismjs": "1.30.0",
     "proj4": "2.17.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-router": "7.10.1",
-    "react-simple-code-editor": "0.14.1"
+    "react-router": "7.10.1"
   },
   "devDependencies": {
     "@babel/preset-react": "7.28.5",
@@ -42,6 +41,7 @@
   },
   "vaadin": {
     "dependencies": {
+      "@monaco-editor/react": "4.7.0",
       "@vaadin/aura": "25.0.1",
       "@vaadin/common-frontend": "0.0.19",
       "@vaadin/react-components": "25.0.1",
@@ -53,12 +53,10 @@
       "date-fns": "4.1.0",
       "lit": "3.3.1",
       "ol": "10.6.1",
-      "prismjs": "1.30.0",
       "proj4": "2.17.0",
       "react": "19.2.3",
       "react-dom": "19.2.3",
-      "react-router": "7.10.1",
-      "react-simple-code-editor": "0.14.1"
+      "react-router": "7.10.1"
     },
     "devDependencies": {
       "@babel/preset-react": "7.28.5",
@@ -79,7 +77,7 @@
       "vite-plugin-checker": "0.12.0",
       "workbox-build": "7.4.0"
     },
-    "hash": "4de9879617c5a7fa980d57c95d6ce84ae08711c62e4979c1bcb77ec91a59ef93"
+    "hash": "c73fe9de76ada331b108ca80ae8db86509d1f51a7135609f9fa42edddf4f3604"
   },
   "overrides": {
     "@vaadin/vaadin-development-mode-detector": "$@vaadin/vaadin-development-mode-detector",
@@ -163,7 +161,6 @@
     "@vaadin/grid-pro": "25.0.1",
     "@vaadin/map": "25.0.1",
     "@vaadin/rich-text-editor": "25.0.1",
-    "prismjs": "$prismjs",
-    "react-simple-code-editor": "$react-simple-code-editor"
+    "@monaco-editor/react": "$@monaco-editor/react"
   }
 }

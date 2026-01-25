@@ -164,7 +164,10 @@ public class FileListItem extends ListItem {
         this.progressBar.setWidth("10%");
         this.progressBar.setVisible(true);
         this.progressBar.setIndeterminate(true);
-        dialog.getHeader().add(spanFileNameTitle, copyButton, this.progressBar, closeButton);
+
+        Icon iconTheme = this.buildIconTheme();
+        SvgIcon iconWordWrap = this.buildIconWordWrap();
+        dialog.getHeader().add(spanFileNameTitle, copyButton, iconTheme, iconWordWrap, this.progressBar, closeButton);
 
         codeEditor.addValueChangeListener(event -> {
             //this.progressBar.setVisible(false);
@@ -180,6 +183,30 @@ public class FileListItem extends ListItem {
 
         dialog.getFooter().add(button);
         return dialog;
+    }
+
+    private Icon buildIconTheme() {
+        final Icon iconTheme = VaadinIcon.ADJUST.create();
+        Tooltip.forComponent(iconTheme)
+                .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
+                .withText("dark - ligth");
+        iconTheme.getStyle().setCursor(CURSOR_POINTER);
+        iconTheme.addClassName(FontSize.SMALL);
+        iconTheme.addClickListener(event -> {
+            String theme = codeEditor.getTheme().equals("vs-dark") ? "light" : "vs-dark";
+            codeEditor.setTheme(theme);
+        });
+        return iconTheme;
+    }
+
+    private SvgIcon buildIconWordWrap() {
+        final SvgIcon iconTheme = SvgFactory.createIconFromSvg("word-wrap.svg", "25px", null);
+        Tooltip.forComponent(iconTheme)
+                .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
+                .withText("word wrap");
+        iconTheme.getStyle().setCursor(CURSOR_POINTER);
+        iconTheme.addClickListener(event -> codeEditor.setWordWrap(!codeEditor.getWordWrap()));
+        return iconTheme;
     }
 
 }
