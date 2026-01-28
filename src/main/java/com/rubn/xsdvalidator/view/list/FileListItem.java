@@ -27,6 +27,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Background;
 import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
@@ -57,6 +58,9 @@ public class FileListItem extends ListItem {
 
     public static final String SIZE = "Size ⋅ ";
     private Dialog dialog = new Dialog();
+
+    @Getter
+    private final Button buttonClose = new Button(LumoIcon.CROSS.create());
     private final ProgressBar progressBar = new ProgressBar();
     private final SimpleCodeEditor simpleCodeEditor = new SimpleCodeEditor();
     private final Checkbox checkbox;
@@ -93,14 +97,22 @@ public class FileListItem extends ListItem {
         Tooltip tooltip = Tooltip.forComponent(spanPrefixName);
         tooltip.setText(prefixFileName);
         tooltip.setPosition(Tooltip.TooltipPosition.TOP);
-        setPrimary(spanPrefixName);
+
+        buttonClose.getStyle().setCursor(CURSOR_POINTER);
+        buttonClose.getStyle().setBorderRadius(BorderRadius.LARGE);
+        buttonClose.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY_INLINE);
+        Tooltip.forComponent(buttonClose).setText("Close");
+
+        super.setPrimary(spanPrefixName, this.buttonClose);
 
         checkbox.addThemeVariants(CheckboxVariant.LUMO_HELPER_ABOVE_FIELD);
 
         String content = SIZE + FileUtils.formatSize(contentLength);
         this.sizeSpan.setText(content);
         this.sizeSpan.addClassName(FontSize.XXSMALL);
-        setSecondary(this.sizeSpan, this.checkbox);
+        this.sizeSpan.setWidthFull();
+
+        super.setSecondary(this.sizeSpan, this.checkbox);
         this.column.removeClassName(Padding.Vertical.XSMALL);
 
         setGap(Layout.Gap.SMALL);
@@ -200,7 +212,7 @@ public class FileListItem extends ListItem {
                 simpleCodeEditor.setContent(newContentStr);
                 this.sizeSpan.setText(SIZE + FileUtils.formatSize(newBytes.length));
                 this.searchPopover.updateItems(this.getXsdXmlFiles());
-                log.info("Content: {}", simpleCodeEditor.getContent());
+                //log.info("Content: {}", simpleCodeEditor.getContent());
             }
         });
         dialog.add(simpleCodeEditor);

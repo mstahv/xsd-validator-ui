@@ -3,6 +3,7 @@ package com.rubn.xsdvalidator.view.list;
 import com.rubn.xsdvalidator.util.Layout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
@@ -32,7 +33,8 @@ public class ListItem extends com.vaadin.flow.component.html.ListItem {
         this.primary.setVisible(false);
 
         this.secondary = new Layout();
-        this.secondary.addClassNames(FontSize.SMALL, TextColor.SECONDARY);
+        this.secondary.setId("div-secondary");
+        this.secondary.addClassNames(FontSize.SMALL, TextColor.SECONDARY, LumoUtility.AlignItems.CENTER);
         this.secondary.setVisible(false);
 
         this.column = new Layout(this.primary, this.secondary);

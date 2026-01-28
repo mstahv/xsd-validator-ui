@@ -413,22 +413,29 @@ public class Input extends Layout implements BeforeEnterObserver {
                     event.getSource().getUI().ifPresent(ui -> {
                         ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
                                 .addConfirmListener(confirm -> {
-                                    customList.remove(fileListItem);
-                                    mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
-                                    uploader.clearFileList();
-                                    // Si borramos el que estaba seleccionado, limpiar la variable
-                                    if (fileName.equals(selectedMainXsd)) {
-                                        selectedMainXsd = StringUtils.EMPTY;
-                                    }
-                                    if (fileName.equals(this.selectedXmlFile)) {
-                                        selectedXmlFile = StringUtils.EMPTY;
-                                    }
-                                    this.searchPopover.updateItems(this.getXsdXmlFiles());
+                                    this.deleteFileListItem(readedBytesFromFile, fileListItem, fileName);
                                 });
                     });
                 });
+        fileListItem.getButtonClose().addClickListener(event -> {
+            this.deleteFileListItem(readedBytesFromFile, fileListItem, fileName);
+        });
         customList.add(fileListItem);
 
+    }
+
+    private void deleteFileListItem(byte[] readedBytesFromFile, FileListItem fileListItem, String fileName) {
+        customList.remove(fileListItem);
+        mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
+        uploader.clearFileList();
+        // Si borramos el que estaba seleccionado, limpiar la variable
+        if (fileName.equals(selectedMainXsd)) {
+            selectedMainXsd = StringUtils.EMPTY;
+        }
+        if (fileName.equals(this.selectedXmlFile)) {
+            selectedXmlFile = StringUtils.EMPTY;
+        }
+        this.searchPopover.updateItems(this.getXsdXmlFiles());
     }
 
     private FileListItem buildFileListItem(String fileName, long contentLength) {
