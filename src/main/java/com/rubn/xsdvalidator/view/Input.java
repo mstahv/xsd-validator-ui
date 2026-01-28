@@ -64,7 +64,7 @@ import java.util.function.Supplier;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_MENU_ITEM_NO_CHECKMARK;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_ITEM;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.JS_COMMAND;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.SCROLLBAR_CUSTOM_STYLE;
@@ -143,7 +143,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         validateButton.setTooltipText("validate");
         validateButton.setDisableOnClick(true);
         validateButton.addClickListener(event -> {
-            if(event.isFromClient()) {
+            if (event.isFromClient()) {
                 if (Objects.isNull(this.selectedXmlFile) || this.selectedXmlFile.isBlank()) {
                     showMessageFailedToStartValidation();
                     return;
@@ -159,7 +159,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         Layout actions = new Layout(this.uploader, validateButton);
         actions.addClassName("actions");
 
-        this.searchPopover =  this.buildPopover(searchField, List.of());
+        this.searchPopover = this.buildPopover(searchField, List.of());
 
         add(divHeader, verticalLayoutArea, actions);
     }
@@ -170,11 +170,11 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private List<String> getXsdXmlFiles() {
-       return mapPrefixFileNameAndContent.keySet()
-               .stream()
-               .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
-               .sorted()
-               .toList();
+        return mapPrefixFileNameAndContent.keySet()
+                .stream()
+                .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
+                .sorted()
+                .toList();
     }
 
     private void synchronizeListFromPopover(Set<String> selectedFiles) {
@@ -293,7 +293,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             this.anchorDownloadErrors.setEnabled(false);
             this.selectedMainXsd = StringUtils.EMPTY;
             this.selectedXmlFile = StringUtils.EMPTY;
-        }).addClassNames(MENU_ITEM_NO_CHECKMARK, DELETE_MENU_ITEM_NO_CHECKMARK);
+        }).addClassNames(MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
 
         itemEllipsis.getSubMenu()
                 .getItems()
@@ -408,30 +408,25 @@ public class Input extends Layout implements BeforeEnterObserver {
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
 
         final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);
+        fileListItem.buildContextMenuItem(fileListItem)
+                .addClickListener(event -> {
+                    event.getSource().getUI().ifPresent(ui -> {
+                        ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
+                                .addConfirmListener(confirm -> {
+                                    customList.remove(fileListItem);
+                                    mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
+                                    uploader.clearFileList();
+                                    // Si borramos el que estaba seleccionado, limpiar la variable
+                                    if (fileName.equals(selectedMainXsd)) {
+                                        selectedMainXsd = StringUtils.EMPTY;
+                                    }
+                                    if (fileName.equals(this.selectedXmlFile)) {
+                                        selectedXmlFile = StringUtils.EMPTY;
+                                    }
+                                });
+                    });
+                });
         customList.add(fileListItem);
-
-        ContextMenu contextMenu = this.buildContextMenu(fileListItem);
-        contextMenu.addItem(this.createRowItemWithIcon("Edit", VaadinIcon.PENCIL.create(), "15px"), event -> {
-            event.getSource().getUI().ifPresent(ui -> fileListItem.showXmlCode());
-        }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
-        contextMenu.addSeparator();
-        contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px"), event -> {
-            event.getSource().getUI().ifPresent(ui -> {
-                ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
-                        .addConfirmListener(confirm -> {
-                            customList.remove(fileListItem);
-                            mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
-                            this.uploader.clearFileList();
-                            // Si borramos el que estaba seleccionado, limpiar la variable
-                            if (fileName.equals(this.selectedMainXsd)) {
-                                this.selectedMainXsd = StringUtils.EMPTY;
-                            }
-                            if (fileName.equals(this.selectedXmlFile)) {
-                                this.selectedXmlFile = StringUtils.EMPTY;
-                            }
-                        });
-            });
-        }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
 
     }
 

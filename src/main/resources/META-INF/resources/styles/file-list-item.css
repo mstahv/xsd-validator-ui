@@ -20,3 +20,26 @@
 .file-list-item svg {
     pointer-events: none;
 }
+
+vaadin-context-menu-item.context-menu-item-no-checkmark {
+  padding-left: var(--lumo-space-s);
+  justify-content: flex-start;
+}
+
+vaadin-context-menu-item.context-menu-item-no-checkmark::part(checkmark)::before {
+  display: none;
+}
+
+vaadin-context-menu-item.context-menu-item-no-checkmark[focused] {
+    box-shadow: none;
+}
+
+/* estilo de item para borrar*/
+vaadin-context-menu-item.delete:hover {
+  color: #d50018;
+  background-color: var(--red-error-color);
+}
+
+vaadin-context-menu-item[focused] {
+   box-shadow: none;
+}

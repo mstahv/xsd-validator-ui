@@ -53,28 +53,6 @@
     align-items: center;
 }
 
-vaadin-context-menu-item.context-menu-item-no-checkmark {
-  padding-left: var(--lumo-space-s);
-  justify-content: flex-start;
-}
-
-vaadin-context-menu-item.context-menu-item-no-checkmark:hover {
-  color: #d50018;
-  background-color: var(--red-error-color);
-}
-
-vaadin-context-menu-item.context-menu-item-no-checkmark::part(checkmark)::before {
-  display: none;
-}
-
-vaadin-context-menu-item.context-menu-item-no-checkmark[focused] {
-    box-shadow: none;
-}
-
-vaadin-context-menu-item[focused] {
-   box-shadow: none;
-}
-
 .close-button-hover:hover {
   background-color: rgba(128, 128, 128, 0.2);
   border-radius: 15px;

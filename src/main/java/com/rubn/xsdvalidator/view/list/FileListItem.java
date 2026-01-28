@@ -1,11 +1,13 @@
 package com.rubn.xsdvalidator.view.list;
 
+import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
 import com.rubn.xsdvalidator.util.FileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.rubn.xsdvalidator.view.SimpleCodeEditor;
 import com.rubn.xsdvalidator.view.Span;
+import com.rubn.xsdvalidator.view.Uploader;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
@@ -13,12 +15,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxVariant;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.icon.AbstractIcon;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -34,7 +40,9 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_ITEM;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.LIGHT;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.VS_DARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CLIPBOARD;
@@ -221,6 +229,35 @@ public class FileListItem extends ListItem {
         iconTheme.getStyle().setCursor(CURSOR_POINTER);
         iconTheme.addClickListener(event -> simpleCodeEditor.setWordWrap(!simpleCodeEditor.getWordWrap()));
         return iconTheme;
+    }
+
+    public MenuItem buildContextMenuItem(FileListItem fileListItem) {
+        ContextMenu contextMenu = this.buildContextMenu(fileListItem);
+        contextMenu.addItem(this.createRowItemWithIcon("Edit", VaadinIcon.PENCIL.create(), "15px"),
+                event -> event.getSource().getUI().ifPresent(ui -> fileListItem.showXmlCode())
+        ).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+        contextMenu.addSeparator();
+        contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px")
+        ).addClassNames(CONTEXT_MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
+        return contextMenu.getItems().get(1);
+    }
+
+    private ContextMenu buildContextMenu(Component target) {
+        final ContextMenu contextMenu = new ContextMenu();
+        contextMenu.setTarget(target);
+        return contextMenu;
+    }
+
+    private HorizontalLayout createRowItemWithIcon(final String titleForSpan, AbstractIcon<?> icon, String iconSizeInPx) {
+        final HorizontalLayout row = new HorizontalLayout();
+        row.setId("row-with-icon");
+        row.setSpacing(false);
+        row.addClassNames(LumoUtility.Gap.SMALL);
+        final com.vaadin.flow.component.html.Span span = new com.vaadin.flow.component.html.Span(titleForSpan);
+        icon.setSize(iconSizeInPx);
+        row.add(icon, span);
+        row.addClassName(LumoUtility.FontSize.SMALL);
+        return row;
     }
 
 }
