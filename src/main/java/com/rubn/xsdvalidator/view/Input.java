@@ -423,6 +423,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                                     if (fileName.equals(this.selectedXmlFile)) {
                                         selectedXmlFile = StringUtils.EMPTY;
                                     }
+                                    this.searchPopover.updateItems(this.getXsdXmlFiles());
                                 });
                     });
                 });
