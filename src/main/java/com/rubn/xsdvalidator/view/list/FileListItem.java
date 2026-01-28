@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.view.list;
 
+import com.rubn.xsdvalidator.util.FileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
@@ -74,7 +75,7 @@ public class FileListItem extends ListItem {
 
         checkbox.addThemeVariants(CheckboxVariant.LUMO_HELPER_ABOVE_FIELD);
 
-        String content = "Size ⋅ " + contentLength + "KB";
+        String content = "Size ⋅ " + FileUtils.formatSize(contentLength);
         setSecondary(new Span(content, FontSize.XXSMALL), checkbox);
         this.column.removeClassName(Padding.Vertical.XSMALL);
 

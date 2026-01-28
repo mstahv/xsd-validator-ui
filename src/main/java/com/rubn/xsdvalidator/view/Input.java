@@ -54,6 +54,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -165,7 +166,7 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     public SearchPopover buildPopover(TextField searchTextField, List<String> xsdXmlFiles) {
         return new SearchPopover(searchTextField, xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
-                selectedSet -> selectedSet.forEach(this::selectXsdFromCode), mapPrefixFileNameAndContent);
+                this::synchronizeListFromPopover, mapPrefixFileNameAndContent);
     }
 
     private List<String> getXsdXmlFiles() {
@@ -176,21 +177,43 @@ public class Input extends Layout implements BeforeEnterObserver {
                .toList();
     }
 
-    private void selectXsdFromCode(String fileName) {
-        FileListItem foundItem = null;
-        List<Component> components = customList
-                .getChildren()
+    private void synchronizeListFromPopover(Set<String> selectedFiles) {
+        // Obtenemos todos los items actuales de la lista visual
+        List<FileListItem> allItems = customList.getChildren()
+                .filter(c -> c instanceof FileListItem)
+                .map(c -> (FileListItem) c)
                 .toList();
-        for (Component component : components) {
-            if (component instanceof FileListItem item && item.getFileName().equals(fileName)) {
-                foundItem = item;
-                break;
+
+        for (FileListItem item : allItems) {
+            String fileName = item.getFileName();
+            boolean shouldBeSelected = selectedFiles.contains(fileName);
+
+            if (shouldBeSelected) {
+                // CASO A: Está seleccionado en el Popover
+                if (!item.isChecked()) {
+                    item.setSelected(true); // Lo marcamos visualmente
+
+                    // Efectos visuales (Mover arriba y Scroll)
+                    customList.addComponentAsFirst(item);
+                    item.getElement().executeJs("this.scrollIntoView({block: 'center', behavior: 'smooth'});");
+
+                    // Actualizamos variables de estado locales si es necesario
+                    if (fileName.toLowerCase().endsWith(XML)) {
+                        this.selectedXmlFile = fileName;
+                    } else {
+                        this.selectedMainXsd = fileName;
+                    }
+                }
+            } else {
+                // CASO B: NO está en el Popover (fue deseleccionado) -> Lo desmarcamos
+                if (item.isChecked()) {
+                    item.setSelected(false);
+
+                    // Limpiamos variables de estado locales
+                    if (fileName.equals(this.selectedXmlFile)) this.selectedXmlFile = null;
+                    if (fileName.equals(this.selectedMainXsd)) this.selectedMainXsd = null;
+                }
             }
-        }
-        if (foundItem != null) {
-            foundItem.setSelected(true);
-            customList.addComponentAsFirst(foundItem);
-            foundItem.getElement().executeJs("this.scrollIntoView({block: 'center', behavior: 'smooth'});");
         }
     }
 
@@ -299,7 +322,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                         ConfirmDialogBuilder.showWarning("Upload failed: " + error.getMessage());
                     }
                     this.searchPopover.updateItems(this.getXsdXmlFiles());
-                    ConfirmDialogBuilder.showInformation("Upload complete");
+                    //ConfirmDialogBuilder.showInformation("Upload complete");
                 })
                 .whenStart(() -> {
                     log.info("Upload started");
@@ -384,7 +407,6 @@ public class Input extends Layout implements BeforeEnterObserver {
         long contentLength = isCompressed ? decompressedFile.content().length : uploadMetadata.contentLength();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
 
-        // Definimos el comportamiento: Qué pasa cuando ALGUIEN selecciona este item
         final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);
         customList.add(fileListItem);
 
@@ -427,6 +449,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     () -> this.selectedMainXsd // Getter
             );
         }
+
         return new FileListItem(fileName, contentLength, onItemSelected, mapPrefixFileNameAndContent);
     }
 
@@ -442,6 +465,9 @@ public class Input extends Layout implements BeforeEnterObserver {
                 if (item.getFileName().equals(currentSelection)) {
                     stateSetter.accept(StringUtils.EMPTY);
                 }
+            }
+            if (this.searchPopover != null) {
+                this.searchPopover.updateSelectionFromOutside(this.selectedMainXsd, this.selectedXmlFile);
             }
         };
     }

@@ -107,4 +107,7 @@ public class XsdValidatorConstants {
     public static final String SVG_IMAGES = "svg-images/";
     public static final String VS_DARK = "vs-dark";
     public static final String LIGHT = "ligth";
+    public static final String XML_ICON = "file-xml-icon.svg";
+    public static final String XSD_ICON = "xsd.svg";
+    public static final String BADGE_PILL_SMALL = "badge pill small";
 }
