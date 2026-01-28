@@ -98,10 +98,17 @@ public class FileListItem extends ListItem {
         tooltip.setText(prefixFileName);
         tooltip.setPosition(Tooltip.TooltipPosition.TOP);
 
+        buttonClose.addClassName("button-close");
+        buttonClose.setHeight("18px");
+        buttonClose.getStyle().setMarginRight("var(--lumo-space-xs)");
         buttonClose.getStyle().setCursor(CURSOR_POINTER);
+        buttonClose.getIcon().getStyle().setWidth("18px");
+        buttonClose.getIcon().getStyle().setHeight("18px");
         buttonClose.getStyle().setBorderRadius(BorderRadius.LARGE);
         buttonClose.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY_INLINE);
-        Tooltip.forComponent(buttonClose).setText("Close");
+        Tooltip.forComponent(buttonClose)
+                .withText("Close")
+                .withPosition(Tooltip.TooltipPosition.TOP);
 
         super.setPrimary(spanPrefixName, this.buttonClose);
 

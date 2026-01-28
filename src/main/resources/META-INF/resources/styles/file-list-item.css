@@ -48,3 +48,11 @@ vaadin-context-menu-item.delete:hover {
 vaadin-context-menu-item[focused] {
    box-shadow: none;
 }
+
+vaadin-button.button-close:hover {
+    border-radius: var(--lumo-border-radius-l);
+    background-color: var(--lumo-contrast-10pct);
+    width: 18px;
+    height: 20px;
+    transition: background-color .3s;
+}
