@@ -116,7 +116,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             verticalLayoutArea.removeAll();
             this.counterSpanId.set(0);
             verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
-        }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+        }).addClassNames(CONTEXT_MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
 
         // attachment upload button
         attachment = new Button(VaadinIcon.UPLOAD.create());
@@ -446,7 +446,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             );
         }
 
-        return new FileListItem(fileName, contentLength, onItemSelected, mapPrefixFileNameAndContent);
+        return new FileListItem(fileName, contentLength, onItemSelected, mapPrefixFileNameAndContent, this.searchPopover);
     }
 
     private BiConsumer<FileListItem, Boolean> createSelectionListener(String extension, Consumer<String> stateSetter,

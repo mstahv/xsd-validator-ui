@@ -5,9 +5,9 @@ import com.rubn.xsdvalidator.util.FileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
+import com.rubn.xsdvalidator.view.SearchPopover;
 import com.rubn.xsdvalidator.view.SimpleCodeEditor;
 import com.rubn.xsdvalidator.view.Span;
-import com.rubn.xsdvalidator.view.Uploader;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
@@ -32,11 +32,14 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Background;
 import com.vaadin.flow.theme.lumo.LumoUtility.BorderRadius;
 import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.jspecify.annotations.NonNull;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -46,22 +49,33 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_ITEM;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.LIGHT;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.VS_DARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CLIPBOARD;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XML;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 
 @Log4j2
 public class FileListItem extends ListItem {
 
+    public static final String SIZE = "Size ⋅ ";
     private Dialog dialog = new Dialog();
     private final ProgressBar progressBar = new ProgressBar();
     private final SimpleCodeEditor simpleCodeEditor = new SimpleCodeEditor();
     private final Checkbox checkbox;
+
+    @Getter
     private final String fileName;
+
     private final Map<String, byte[]> mapPrefixFileNameAndContent;
+    private final Span sizeSpan = new Span();
+    private SearchPopover searchPopover;
 
     public FileListItem(String prefixFileName, long contentLength,
-                        BiConsumer<FileListItem, Boolean> onSelectionListener, final Map<String, byte[]> mapPrefixFileNameAndContent) {
+                        BiConsumer<FileListItem, Boolean> onSelectionListener,
+                        final Map<String, byte[]> mapPrefixFileNameAndContent,
+                        SearchPopover searchPopover) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
         this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
+        this.searchPopover = searchPopover;
 
         this.checkbox.addValueChangeListener(event -> {
             //Important! do not use event.isFromClient() in this condition
@@ -83,8 +97,10 @@ public class FileListItem extends ListItem {
 
         checkbox.addThemeVariants(CheckboxVariant.LUMO_HELPER_ABOVE_FIELD);
 
-        String content = "Size ⋅ " + FileUtils.formatSize(contentLength);
-        setSecondary(new Span(content, FontSize.XXSMALL), checkbox);
+        String content = SIZE + FileUtils.formatSize(contentLength);
+        this.sizeSpan.setText(content);
+        this.sizeSpan.addClassName(FontSize.XXSMALL);
+        setSecondary(this.sizeSpan, this.checkbox);
         this.column.removeClassName(Padding.Vertical.XSMALL);
 
         setGap(Layout.Gap.SMALL);
@@ -122,8 +138,12 @@ public class FileListItem extends ListItem {
         return this.checkbox.getValue();
     }
 
-    public String getFileName() {
-        return this.fileName;
+    private List<String> getXsdXmlFiles() {
+        return mapPrefixFileNameAndContent.keySet()
+                .stream()
+                .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
+                .sorted()
+                .toList();
     }
 
     public void showXmlCode() {
@@ -173,13 +193,29 @@ public class FileListItem extends ListItem {
         dialog.getHeader().add(spanFileNameTitle, copyButton, iconTheme, iconWordWrap, this.progressBar, closeButton);
 
         simpleCodeEditor.addValueChangeListener(event -> {
-            //this.progressBar.setVisible(false);
+            String newContentStr = simpleCodeEditor.getContent();
+            if (newContentStr != null) {
+                byte[] newBytes = newContentStr.getBytes(StandardCharsets.UTF_8);
+                this.mapPrefixFileNameAndContent.put(fileName, newBytes);
+                simpleCodeEditor.setContent(newContentStr);
+                this.sizeSpan.setText(SIZE + FileUtils.formatSize(newBytes.length));
+                this.searchPopover.updateItems(this.getXsdXmlFiles());
+                log.info("Content: {}", simpleCodeEditor.getContent());
+            }
         });
         dialog.add(simpleCodeEditor);
         //Footer with update code ?
-        final Button button = new Button("Save", (event) -> {
-            Notification.show("Not yet implemented!!!").addThemeVariants(NotificationVariant.LUMO_PRIMARY);
-            //log.info("Content: {}", codeEditor.getContent());
+        final Button button = new Button("Update file", (event) -> {
+//            log.info("Content: {}", simpleCodeEditor.getContent());
+            String newContentStr = simpleCodeEditor.getContent();
+            if (newContentStr != null) {
+                byte[] newBytes = newContentStr.getBytes(StandardCharsets.UTF_8);
+                this.mapPrefixFileNameAndContent.put(fileName, newBytes);
+                simpleCodeEditor.setContent(newContentStr);
+                this.sizeSpan.setText(SIZE + FileUtils.formatSize(newBytes.length));
+                ConfirmDialogBuilder.showInformation("Updated!");
+                this.searchPopover.updateItems(this.getXsdXmlFiles());
+            }
         });
         button.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
         button.addThemeVariants(ButtonVariant.LUMO_SMALL);

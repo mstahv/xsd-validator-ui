@@ -227,9 +227,14 @@ public class SearchPopover extends Popover {
         }
     }
 
+    /**
+     * Sirve para actualizar los span del footer, cuando se borran o editan los {@link com.rubn.xsdvalidator.view.list.FileListItem}
+     *
+     * @param newItems
+     */
     public void updateItems(List<String> newItems) {
         this.allXsdXmlFiles = List.copyOf(newItems);
-        filterList(searchField.getValue());
+        this.filterList(searchField.getValue());
         this.updateCounters();
     }
 
@@ -243,7 +248,9 @@ public class SearchPopover extends Popover {
                 .comparingInt((String fileName) -> currentSelection.contains(fileName) ? 0 : 1)
                 .thenComparing(item -> item.toLowerCase());
 
-        List<String> sorted = items.stream().sorted(priorityComparator).toList();
+        List<String> sorted = items.stream()
+                .sorted(priorityComparator)
+                .toList();
 
         this.currentVisibleItems = sorted;
         listBox.setItems(sorted);
