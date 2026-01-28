@@ -3,7 +3,6 @@ package com.rubn.xsdvalidator.view;
 import com.rubn.xsdvalidator.util.FileUtils;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
-import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;
@@ -14,7 +13,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.shared.SelectionPreservationMode;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -47,20 +45,19 @@ public class SearchPopover extends Popover {
 
     public static final String BADGE_PILL = "badge pill";
     public static final String THEME_INACTIVE = "contrast";
+    public static final String HEIGHT = "300px";
 
     private final Div divCenterSpanNotSearch = new Div();
     private final MultiSelectListBox<String> listBox = new MultiSelectListBox<>();
     private final Set<String> currentSelection = new ConcurrentSkipListSet<>();
     private final TextField searchField;
-    private final Map<String, byte[]> mapPrefixFileNameAndContent;
-    private final Consumer<Set<String>> onSelectCallback;
 
     private final Span totalSpan = new Span();
     private final Span xsdSpan = new Span();
     private final Span xmlSpan = new Span();
 
     private List<String> allXsdXmlFiles;
-    private List<String> currentVisibleItems; // IMPORTANTE: Para gestionar deselección al filtrar
+    private List<String> currentVisibleItems;
 
     public SearchPopover(TextField searchField, List<String> rawFileList, String initialXsdSelection,
                          String initialXmlSelection,
@@ -68,21 +65,21 @@ public class SearchPopover extends Popover {
                          final Map<String, byte[]> mapPrefixFileNameAndContent) {
 
         this.searchField = searchField;
-        this.onSelectCallback = onSelectCallback;
-        this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
 
         addClassName("search-dialog-content");
         setWidth("500px");
         setModal(false);
         setPosition(PopoverPosition.BOTTOM_END);
 
-        // --- 1. Configurar Div "No encontrado" ---
+        // Center div with not found item
         Span spanNotSearchFound = new Span("Item not found!");
+        spanNotSearchFound.addClassName(LumoUtility.TextColor.SECONDARY);
         this.divCenterSpanNotSearch.add(spanNotSearchFound);
-        this.divCenterSpanNotSearch.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Height.FULL,
+        this.divCenterSpanNotSearch.setHeight(HEIGHT);
+        this.divCenterSpanNotSearch.addClassNames(LumoUtility.Display.FLEX,
+                LumoUtility.Width.FULL,
                 LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
-        this.divCenterSpanNotSearch.setVisible(false); // Oculto por defecto
 
         this.searchField.addValueChangeListener(e -> {
             if (!this.isOpened()) {
@@ -104,10 +101,11 @@ public class SearchPopover extends Popover {
         // Ordenar inicialmente
         sortAndSetItems(this.allXsdXmlFiles);
 
+        listBox.setVisible(false);
         listBox.setValue(currentSelection);
         listBox.setSelectionPreservationMode(SelectionPreservationMode.PRESERVE_ALL);
         listBox.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE_ITEMS);
-        listBox.setHeight("300px");
+        listBox.setHeight(HEIGHT);
         listBox.setWidthFull();
 
         // --- 5. Renderer Optimizado ---
@@ -170,8 +168,8 @@ public class SearchPopover extends Popover {
         HorizontalLayout filtersBadges = new HorizontalLayout();
         filtersBadges.getStyle().setPadding("var(--lumo-space-xs)");
         filtersBadges.setSpacing("var(--lumo-space-s)");
-        com.vaadin.flow.component.html.Span btnXml = new com.vaadin.flow.component.html.Span(".xml");
-        com.vaadin.flow.component.html.Span btnXsd = new com.vaadin.flow.component.html.Span(".xsd");
+        com.vaadin.flow.component.html.Span btnXml = new com.vaadin.flow.component.html.Span(XML);
+        com.vaadin.flow.component.html.Span btnXsd = new com.vaadin.flow.component.html.Span(XSD);
         configureBadgeButton(btnXml);
         configureBadgeButton(btnXsd);
 
@@ -193,7 +191,7 @@ public class SearchPopover extends Popover {
         btnXsd.addClickListener(listener);
         filtersBadges.add(btnXml, btnXsd);
 
-        final Hr hrLine = getHr();
+        final Hr hrLine = buildHrSeparator();
 
         final HorizontalLayout rowFooter = new HorizontalLayout();
         rowFooter.getStyle().setPadding("var(--lumo-space-xs)");
@@ -202,7 +200,7 @@ public class SearchPopover extends Popover {
         this.updateCounters();
         rowFooter.add(totalSpan, xsdSpan, xmlSpan);
 
-        final Hr hrLineFooter = getHr();
+        final Hr hrLineFooter = buildHrSeparator();
 
         VerticalLayout layout = new VerticalLayout(filtersBadges, hrLine, listBox, divCenterSpanNotSearch, hrLineFooter, rowFooter);
         layout.setPadding(false);
@@ -230,8 +228,7 @@ public class SearchPopover extends Popover {
     }
 
     public void updateItems(List<String> newItems) {
-        this.allXsdXmlFiles = new ArrayList<>(newItems);
-        // Filtramos de nuevo para mantener coherencia si el usuario estaba buscando algo
+        this.allXsdXmlFiles = List.copyOf(newItems);
         filterList(searchField.getValue());
         this.updateCounters();
     }
@@ -279,10 +276,6 @@ public class SearchPopover extends Popover {
     }
 
     private void updateCounters() {
-        if (allXsdXmlFiles.isEmpty()) {
-            return;
-        }
-
         long countXsd = allXsdXmlFiles.stream().filter(name -> name.toLowerCase().endsWith(XSD)).count();
         long countXml = allXsdXmlFiles.stream().filter(name -> name.toLowerCase().endsWith(XML)).count();
 
@@ -299,7 +292,7 @@ public class SearchPopover extends Popover {
         span.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
     }
 
-    private @NonNull Hr getHr() {
+    private @NonNull Hr buildHrSeparator() {
         final Hr hrLine = new Hr();
         hrLine.addClassName("hr-line");
         return hrLine;
@@ -313,10 +306,6 @@ public class SearchPopover extends Popover {
 
     private void makeInactive(com.vaadin.flow.component.html.Span span) {
         span.getElement().getThemeList().add(THEME_INACTIVE);
-    }
-
-    private String fieldNotEmptyOrUseItems(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<String>, String> event) {
-        return !this.searchField.getValue().isEmpty() ? this.searchField.getValue() : event.getValue();
     }
 
 }
