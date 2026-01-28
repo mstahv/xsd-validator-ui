@@ -10,6 +10,7 @@ import com.rubn.xsdvalidator.view.SimpleCodeEditor;
 import com.rubn.xsdvalidator.view.Span;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -27,6 +28,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.server.Command;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Background;
@@ -37,6 +39,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.jspecify.annotations.NonNull;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -167,8 +170,20 @@ public class FileListItem extends ListItem {
 
     public void showXmlCode() {
         this.dialog.open();
-        this.simpleCodeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
-        this.progressBar.setVisible(false);
+        this.progressBar.setVisible(true);
+        Mono.fromRunnable(() -> {
+                    this.access(() -> {
+                        this.simpleCodeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
+                    });
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .delaySubscription(Duration.ofMillis(700))
+                .doOnTerminate(() -> {
+                    this.access(() -> {
+                        this.progressBar.setVisible(false);
+                    });
+                })
+                .subscribe();
     }
 
     public void closeDialog() {
@@ -313,6 +328,15 @@ public class FileListItem extends ListItem {
         row.add(icon, span);
         row.addClassName(LumoUtility.FontSize.SMALL);
         return row;
+    }
+
+    private void access(Command command) {
+        super.getUI().ifPresent(ui -> {
+            try {
+                ui.access(command);
+            } catch (UIDetachedException ex) {
+            }
+        });
     }
 
 }
