@@ -1,7 +1,7 @@
 package com.rubn.xsdvalidator.view.list;
 
 import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
-import com.rubn.xsdvalidator.util.FileUtils;
+import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
@@ -117,7 +117,7 @@ public class FileListItem extends ListItem {
 
         checkbox.addThemeVariants(CheckboxVariant.LUMO_HELPER_ABOVE_FIELD);
 
-        String content = SIZE + FileUtils.formatSize(contentLength);
+        String content = SIZE + XsdValidatorFileUtils.formatSize(contentLength);
         this.sizeSpan.setText(content);
         this.sizeSpan.addClassName(FontSize.XXSMALL);
         this.sizeSpan.setWidthFull();
@@ -232,7 +232,7 @@ public class FileListItem extends ListItem {
                 byte[] newBytes = newContentStr.getBytes(StandardCharsets.UTF_8);
                 this.mapPrefixFileNameAndContent.put(fileName, newBytes);
                 simpleCodeEditor.setContent(newContentStr);
-                this.sizeSpan.setText(SIZE + FileUtils.formatSize(newBytes.length));
+                this.sizeSpan.setText(SIZE + XsdValidatorFileUtils.formatSize(newBytes.length));
                 this.searchPopover.updateItems(this.getXsdXmlFiles());
                 //log.info("Content: {}", simpleCodeEditor.getContent());
             }
@@ -246,7 +246,7 @@ public class FileListItem extends ListItem {
                 byte[] newBytes = newContentStr.getBytes(StandardCharsets.UTF_8);
                 this.mapPrefixFileNameAndContent.put(fileName, newBytes);
                 simpleCodeEditor.setContent(newContentStr);
-                this.sizeSpan.setText(SIZE + FileUtils.formatSize(newBytes.length));
+                this.sizeSpan.setText(SIZE + XsdValidatorFileUtils.formatSize(newBytes.length));
                 ConfirmDialogBuilder.showInformation("Updated!");
                 this.searchPopover.updateItems(this.getXsdXmlFiles());
             }

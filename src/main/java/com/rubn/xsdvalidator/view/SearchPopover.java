@@ -1,6 +1,6 @@
 package com.rubn.xsdvalidator.view;
 
-import com.rubn.xsdvalidator.util.FileUtils;
+import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.ClickEvent;
@@ -122,7 +122,7 @@ public class SearchPopover extends Popover {
             // sizeInBytes to length String
             byte[] bytes = mapPrefixFileNameAndContent.get(paramfileName);
             long sizeInBytes = bytes != null ? bytes.length : 0;
-            String formattedSize = FileUtils.formatSize(sizeInBytes);
+            String formattedSize = XsdValidatorFileUtils.formatSize(sizeInBytes);
 
             Span spanParamFileName = new Span(paramfileName);
             spanParamFileName.addClassName(LumoUtility.TextColor.SECONDARY);

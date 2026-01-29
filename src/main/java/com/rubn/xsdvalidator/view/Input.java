@@ -1,11 +1,10 @@
 package com.rubn.xsdvalidator.view;
 
-import com.rubn.xsdvalidator.enums.SupportFilesEnum;
 import com.rubn.xsdvalidator.records.DecompressedFile;
 import com.rubn.xsdvalidator.service.DecompressionService;
 import com.rubn.xsdvalidator.service.ValidationXsdSchemaService;
 import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
-import com.rubn.xsdvalidator.util.FileUtils;
+import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
@@ -43,7 +42,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.util.FastByteArrayOutputStream;
 import org.vaadin.firitin.components.upload.UploadFileHandler;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -301,15 +299,22 @@ public class Input extends Layout implements BeforeEnterObserver {
         return menuBarGridOptions;
     }
 
+    /**
+     * Thanks to {@link <a href="https://github.com/mstahv">mstahv<a>} for helping to fix the error when uploading a large
+     * file and several error notifications were displayed.
+     *
+     * @param attachment
+     * @return UploadFileHandler
+     */
     private UploadFileHandler buildUploadHandler(final Button attachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
-                if (SupportFilesEnum.fromExtension(FileUtils.getFileExtension(metadata.fileName())) == SupportFilesEnum.UNKNOWN) {
+                if (XsdValidatorFileUtils.isSupportedExtension(metadata.fileName())) {
                     // Another improvement place for UploadFileHandler here, would be great to
                     // have reference for component/ui in handler...
                     executeUI(() -> {
                         Notification.show("File not supported!",
                                         2000, Notification.Position.MIDDLE)
-                                .addThemeVariants(NotificationVariant.LUMO_WARNING);
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
                         uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
                     });
                     // This sends 500 to browser and stop reading bytes
