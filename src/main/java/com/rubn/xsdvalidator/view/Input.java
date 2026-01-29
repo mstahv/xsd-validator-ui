@@ -92,6 +92,7 @@ public class Input extends Layout implements BeforeEnterObserver {
      */
     private final ValidationXsdSchemaService validationXsdSchemaService;
     private final DecompressionService decompressionService;
+    private final UploadFileHandler uploadFileHandler;
     /**
      * Mutable fields
      */
@@ -153,7 +154,8 @@ public class Input extends Layout implements BeforeEnterObserver {
             }
         });
 
-        Layout actions = new Layout(this.buildUploadHandler(attachment), validateButton);
+        uploadFileHandler = this.buildUploadHandler(attachment);
+        Layout actions = new Layout(uploadFileHandler, validateButton);
         actions.addClassName("actions");
 
         this.searchPopover = this.buildPopover(searchField, List.of());
@@ -327,6 +329,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     Notification.show("Upload failed: " + error.getMessage(),
                                     2000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_WARNING);
+                    uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
                 });
                 // If not throwing the exception, tomcat (!?!) somehow tries to rehandle the file
                 // Or chrome, but it doesn't show any communication, anyways, by throwing it gets
