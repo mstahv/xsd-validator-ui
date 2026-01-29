@@ -2,6 +2,7 @@ package com.rubn.xsdvalidator.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 
@@ -9,16 +10,20 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum SupportFilesEnum {
 
+    XML(".xml"),
+    XSD(".xsd"),
     ZIP(".zip"),
     FILE_7Z(".7z"),
     RAR(".rar"),
-    UNKNOWN("unknown file");
+    UNKNOWN("");
 
-    final String supportFile;
+    final String extension;
 
-    public static SupportFilesEnum fromExtension(String extension) {
+    public static SupportFilesEnum fromExtension(String filenameOrExtension) {
+        if (StringUtils.isBlank(filenameOrExtension)) return UNKNOWN;
         return Arrays.stream(SupportFilesEnum.values())
-                .filter(index -> index.supportFile.endsWith(extension))
+                .filter(type -> type != UNKNOWN)
+                .filter(type -> type.extension.endsWith(filenameOrExtension))
                 .findFirst()
                 .orElse(UNKNOWN);
     }

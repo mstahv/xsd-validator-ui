@@ -67,7 +67,6 @@ class XsdValidatorView extends Main {
         searchField.setWidth("500px");
         searchField.setClearButtonVisible(true);
         final SearchPopover searchPopover = input.getSearchPopover();
-        searchPopover.setTarget(searchField);
 
         searchField.getStyle().setCursor(CURSOR_POINTER);
 //        searchField.getStyle().setBorder("1px var(--lumo-utility-border-style, solid) var(--lumo-utility-border-color, var(--lumo-contrast-10pct))");
@@ -75,12 +74,13 @@ class XsdValidatorView extends Main {
         searchField.setValueChangeMode(ValueChangeMode.EAGER);
         searchField.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
         final Span spanShortCut = new Span("Ctrl K");
+        spanShortCut.getStyle().setCursor(CURSOR_POINTER);
         spanShortCut.getElement().getThemeList().add("badge small pill constrast");
         spanShortCut.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
         Shortcuts.addShortcutListener(searchField, listener -> {
-                    searchPopover.open();
-                    searchField.focus();
-                }, Key.KEY_K, KeyModifier.CONTROL);
+            searchPopover.open();
+            searchField.focus();
+        }, Key.KEY_K, KeyModifier.CONTROL);
 
         final Span animatedText = new Span();
         animatedText.addClassName("search-animation");

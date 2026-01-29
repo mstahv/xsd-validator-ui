@@ -16,4 +16,10 @@ public class FileUtils {
         char unit = "kMG".charAt(exp - 1);
         return String.format("%.1f %sB", bytes / Math.pow(1024, exp), unit);
     }
+
+    public String getFileExtension(String fileName) {
+        int lastDot = fileName.lastIndexOf('.');
+        return lastDot > 0 ? fileName.substring(lastDot + 1) : "";
+    }
+
 }

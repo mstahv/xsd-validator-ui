@@ -10,7 +10,7 @@ import org.vaadin.firitin.components.RichText;
 public class AboutDialog extends Dialog {
 
     public AboutDialog() {
-        super.addClassName("about-dialog");
+        super.setHeaderTitle("Steps");
 
         final Button closeButton = new Button(VaadinIcon.CLOSE.create());
         closeButton.setTooltipText("Close");
@@ -19,9 +19,7 @@ public class AboutDialog extends Dialog {
         closeButton.addClickListener(e -> close());
         super.getHeader().add(closeButton);
 
-        super.add(new RichText().withMarkDown("""
-                ### Steps
-                
+        super.add(new RichText().withMarkDown("""   
                 1. Upload at least one xsd and xml file using the **Attachment** button below.
                 2. Then press the validate button.
                 3. A series of errors will be displayed if there are any, otherwise a message saying **Validation successful** will appear.

@@ -66,11 +66,16 @@ public class SearchPopover extends Popover {
 
         this.searchField = searchField;
 
-        addClassName("search-dialog-content");
-        setWidth("500px");
-        setModal(false);
-        setPosition(PopoverPosition.BOTTOM_END);
-
+        super.addClassName("search-popover-content");
+        super.setWidth("500px");
+        super.setModal(false);
+        super.setBackdropVisible(true);
+        this.setCloseOnOutsideClick(true);
+        super.setPosition(PopoverPosition.BOTTOM_END);
+        super.setTarget(searchField);
+//        this.searchField.getElement().executeJs(
+//                "this.addEventListener('click', function(e) { e.stopPropagation(); });"
+//        );
         // Center div with not found item
         Span spanNotSearchFound = new Span("Item not found!");
         spanNotSearchFound.addClassName(LumoUtility.TextColor.SECONDARY);
@@ -82,9 +87,9 @@ public class SearchPopover extends Popover {
                 LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
 
         this.searchField.addValueChangeListener(e -> {
-            if (!this.isOpened()) {
-                this.setOpened(true);
-            }
+//            if (!this.isOpened()) {
+//                this.setOpened(true);
+//            }
             this.filterList(e.getValue());
         });
 

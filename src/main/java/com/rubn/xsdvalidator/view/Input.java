@@ -1,11 +1,14 @@
 package com.rubn.xsdvalidator.view;
 
+import com.rubn.xsdvalidator.enums.SupportFilesEnum;
 import com.rubn.xsdvalidator.records.DecompressedFile;
 import com.rubn.xsdvalidator.service.DecompressionService;
 import com.rubn.xsdvalidator.service.ValidationXsdSchemaService;
 import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
+import com.rubn.xsdvalidator.util.FileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
+import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.rubn.xsdvalidator.view.list.CustomList;
 import com.rubn.xsdvalidator.view.list.FileListItem;
 import com.vaadin.flow.component.Component;
@@ -35,15 +38,13 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.DownloadResponse;
-import com.vaadin.flow.server.streams.InMemoryUploadHandler;
-import com.vaadin.flow.server.streams.UploadHandler;
-import com.vaadin.flow.server.streams.UploadMetadata;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.util.FastByteArrayOutputStream;
+import org.vaadin.firitin.components.upload.UploadFileHandler;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -134,7 +135,6 @@ public class Input extends Layout implements BeforeEnterObserver {
         divHeader.addClassName("div-files-wrapper");
 
         this.uploader = new Uploader(attachment);
-        this.uploader.setUploadHandler(this.buildUploadHandler());
 
         validateButton = new Button("Validate", VaadinIcon.CHECK.create());
         validateButton.addClassName("validate-button");
@@ -156,7 +156,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             }
         });
 
-        Layout actions = new Layout(this.uploader, validateButton);
+        Layout actions = new Layout(this.buildUploadHandler(attachment), validateButton);
         actions.addClassName("actions");
 
         this.searchPopover = this.buildPopover(searchField, List.of());
@@ -302,35 +302,46 @@ public class Input extends Layout implements BeforeEnterObserver {
         return menuBarGridOptions;
     }
 
-    private InMemoryUploadHandler buildUploadHandler() {
-        //Fixme use TransferProgressAwareHandler
-        return UploadHandler.inMemory((metadata, data) -> {
-                    //without buffered, prevent a SAXException
-                    try (final InputStream inputStream = new ByteArrayInputStream(data);
-                         final FastByteArrayOutputStream fastOutputStream = new FastByteArrayOutputStream()) {
-                        String fileName = metadata.fileName();
-                        if (this.decompressionService.isCompressedFile(fileName)) {
-                            List<DecompressedFile> files = this.decompressionService.decompressFile(fileName, inputStream);
-                            files.forEach(decompressedFile -> this.processFile(metadata, decompressedFile.content(), true, decompressedFile));
-                        } else {
-                            inputStream.transferTo(fastOutputStream);
-                            byte[] bytes = fastOutputStream.toByteArray();
-                            this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
-                        }
-                    } catch (Exception error) {
-                        log.error(error.getMessage());
-                        ConfirmDialogBuilder.showWarning("Upload failed: " + error.getMessage());
-                    }
-                    this.searchPopover.updateItems(this.getXsdXmlFiles());
-                    //ConfirmDialogBuilder.showInformation("Upload complete");
-                })
-                .whenStart(() -> {
-                    log.info("Upload started");
+    private UploadFileHandler buildUploadHandler(final Button attachment) {
+        return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
+            try (final FastByteArrayOutputStream fastOutputStream = new FastByteArrayOutputStream()) {
+                if (SupportFilesEnum.fromExtension(FileUtils.getFileExtension(metadata.fileName())) == SupportFilesEnum.UNKNOWN) {
+                    throw new IllegalArgumentException("File not supported!");
+                }
+                String fileName = metadata.fileName();
+                if (this.decompressionService.isCompressedFile(fileName)) {
+                    List<DecompressedFile> files = this.decompressionService.decompressFile(fileName, inputStream);
+                    files.forEach(decompressedFile -> {
+                        this.executeUI(() -> this.processFile(metadata, decompressedFile.content(), true, decompressedFile));
+                    });
+                } else {
+                    inputStream.transferTo(fastOutputStream);
+                    byte[] bytes = fastOutputStream.toByteArray();
+                    this.executeUI(() -> {
+                        this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
+                    });
+                }
+                return () -> {
                     this.uploader.clearFileList();
-                })
-                .whenComplete((transferContext, aBoolean) -> {
-                    log.info("Upload complete");
-                });
+                    this.searchPopover.updateItems(this.getXsdXmlFiles());
+                };
+            } catch (Exception error) {
+                return () -> {
+                    log.error("Error catch uploader: {}", error.getMessage());
+                    Notification.show("Upload failed: " + error.getMessage(),
+                                    2000, Notification.Position.MIDDLE)
+                            .addThemeVariants(NotificationVariant.LUMO_WARNING);
+                    this.uploader.clearFileList();
+                };
+            }
+        })
+                .withClearAutomatically(true)
+                .withAddedClassName("upload-xml-xsd", LumoUtility.Padding.XSMALL, LumoUtility.Width.FULL,
+                        LumoUtility.Margin.Right.MEDIUM, LumoUtility.Margin.Left.NONE)
+                .withDragAndDrop(true)
+                .withDropLabelIcon(new Span())
+                .withDropLabel(new Span("Drop files here, only support: " + XsdValidatorConstants.SUPPORT_FILES))
+                .withUploadButton(attachment);
     }
 
     private void validateXmlInputWithXsdSchema() {
@@ -400,11 +411,11 @@ public class Input extends Layout implements BeforeEnterObserver {
         return span;
     }
 
-    private void processFile(final UploadMetadata uploadMetadata, byte[] readedBytesFromFile, boolean isCompressed,
+    private void processFile(final UploadFileHandler.FileDetails metadata, byte[] readedBytesFromFile, boolean isCompressed,
                              DecompressedFile decompressedFile) {
 
-        final String fileName = isCompressed ? decompressedFile.fileName() : uploadMetadata.fileName();
-        long contentLength = isCompressed ? decompressedFile.content().length : uploadMetadata.contentLength();
+        final String fileName = isCompressed ? decompressedFile.fileName() : metadata.fileName();
+        long contentLength = isCompressed ? decompressedFile.content().length : metadata.contentLenght();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
 
         final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);

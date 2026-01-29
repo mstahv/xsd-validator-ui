@@ -81,7 +81,7 @@ public class DecompressionService {
     private List<DecompressedFile> decompressRar(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
-        Path tempFile = this.toTempFile(inputStream, "tempRarArchive-", SupportFilesEnum.RAR.getSupportFile());
+        Path tempFile = this.toTempFile(inputStream, "tempRarArchive-", SupportFilesEnum.RAR.getExtension());
         try {
             try (RandomAccessFile raf = new RandomAccessFile(tempFile.toFile(), "r")) {// open for reading
                 try (IInArchive inArchive = SevenZip.openInArchive(null, // autodetect archive type
@@ -132,7 +132,7 @@ public class DecompressionService {
     private List<DecompressedFile> decompress7z(InputStream inputStream) throws IOException {
         List<DecompressedFile> files = new CopyOnWriteArrayList<>();
 
-        Path tempFile = toTempFile(inputStream, "temp_7z_", SupportFilesEnum.FILE_7Z.getSupportFile());
+        Path tempFile = toTempFile(inputStream, "temp_7z_", SupportFilesEnum.FILE_7Z.getExtension());
 
         try {
             try (SevenZFile sevenZFile = SevenZFile.builder().setPath(tempFile).get()) {
@@ -179,6 +179,7 @@ public class DecompressionService {
         String extension = this.getFileExtension(fileName);
         SupportFilesEnum supportFilesEnum = SupportFilesEnum.fromExtension(extension);
         return switch (supportFilesEnum) {
+            case XML, XSD -> false;
             case FILE_7Z, RAR, ZIP -> true;
             case UNKNOWN -> false;
         };
