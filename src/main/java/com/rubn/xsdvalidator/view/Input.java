@@ -303,39 +303,38 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     private UploadFileHandler buildUploadHandler(final Button attachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
-            try (final FastByteArrayOutputStream fastOutputStream = new FastByteArrayOutputStream()) {
                 if (SupportFilesEnum.fromExtension(FileUtils.getFileExtension(metadata.fileName())) == SupportFilesEnum.UNKNOWN) {
+                    // Another improvement place for UploadFileHandler here, would be great to
+                    // have reference for component/ui in handler...
+                    executeUI(() -> {
+                        Notification.show("File not supported!",
+                                        2000, Notification.Position.MIDDLE)
+                                .addThemeVariants(NotificationVariant.LUMO_WARNING);
+                        uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
+                    });
+                    // This sends 500 to browser and stop reading bytes
                     throw new IllegalArgumentException("File not supported!");
                 }
                 String fileName = metadata.fileName();
+                byte[] bytes;
+                List<DecompressedFile> decompressedFiles;
                 if (this.decompressionService.isCompressedFile(fileName)) {
-                    List<DecompressedFile> files = this.decompressionService.decompressFile(fileName, inputStream);
-                    files.forEach(decompressedFile -> {
-                        this.executeUI(() -> this.processFile(metadata, decompressedFile.content(), true, decompressedFile));
-                    });
+                    decompressedFiles = this.decompressionService.decompressFile(fileName, inputStream);
+                    bytes = null;
                 } else {
-                    inputStream.transferTo(fastOutputStream);
-                    byte[] bytes = fastOutputStream.toByteArray();
-                    this.executeUI(() -> {
-                        this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
-                    });
+                    bytes = inputStream.readAllBytes();
+                    decompressedFiles = null;
                 }
                 return () -> {
+                    if(decompressedFiles != null) {
+                        decompressedFiles.forEach(decompressedFile -> {
+                            this.processFile(metadata, decompressedFile.content(), true, decompressedFile);
+                        });
+                    } else {
+                        this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
+                    }
                     this.searchPopover.updateItems(this.getXsdXmlFiles());
                 };
-            } catch (Exception error) {
-                executeUI(() -> {
-                    log.error("Error catch uploader: {}", error.getMessage());
-                    Notification.show("Upload failed: " + error.getMessage(),
-                                    2000, Notification.Position.MIDDLE)
-                            .addThemeVariants(NotificationVariant.LUMO_WARNING);
-                    uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
-                });
-                // If not throwing the exception, tomcat (!?!) somehow tries to rehandle the file
-                // Or chrome, but it doesn't show any communication, anyways, by throwing it gets
-                // handling properly (except for stacktrace printed 3 times, thanks to Vaadin & Spring Boot)
-                throw error;
-            }
         })
                 .withClearAutomatically(true)
                 .withAddedClassName("upload-xml-xsd", LumoUtility.Padding.XSMALL, LumoUtility.Width.FULL,
