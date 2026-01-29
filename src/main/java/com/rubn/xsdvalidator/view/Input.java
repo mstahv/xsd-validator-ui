@@ -308,7 +308,7 @@ public class Input extends Layout implements BeforeEnterObserver {
      */
     private UploadFileHandler buildUploadHandler(final Button attachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
-                if (XsdValidatorFileUtils.isSupportedExtension(metadata.fileName())) {
+                if (XsdValidatorFileUtils.isNotSupportedExtension(metadata.fileName())) {
                     // Another improvement place for UploadFileHandler here, would be great to
                     // have reference for component/ui in handler...
                     executeUI(() -> {

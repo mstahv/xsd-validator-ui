@@ -23,7 +23,7 @@ public class XsdValidatorFileUtils {
         return lastDot > 0 ? fileName.substring(lastDot + 1) : "";
     }
 
-    public static boolean isSupportedExtension(String fileName) {
+    public static boolean isNotSupportedExtension(String fileName) {
         return SupportFilesEnum.fromExtension(getFileExtension(fileName)) == SupportFilesEnum.UNKNOWN;
     }
 
