@@ -86,7 +86,6 @@ public class Input extends Layout implements BeforeEnterObserver {
     private final Button attachment;
     private final Button validateButton;
     private final CustomList customList;
-    private final Uploader uploader;
     private final Anchor anchorDownloadErrors;
     /**
      * Service
@@ -133,8 +132,6 @@ public class Input extends Layout implements BeforeEnterObserver {
 
         final Div divHeader = new Div(customList, menuBar);
         divHeader.addClassName("div-files-wrapper");
-
-        this.uploader = new Uploader(attachment);
 
         validateButton = new Button("Validate", VaadinIcon.CHECK.create());
         validateButton.addClassName("validate-button");
@@ -322,17 +319,19 @@ public class Input extends Layout implements BeforeEnterObserver {
                     });
                 }
                 return () -> {
-                    this.uploader.clearFileList();
                     this.searchPopover.updateItems(this.getXsdXmlFiles());
                 };
             } catch (Exception error) {
-                return () -> {
+                executeUI(() -> {
                     log.error("Error catch uploader: {}", error.getMessage());
                     Notification.show("Upload failed: " + error.getMessage(),
                                     2000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_WARNING);
-                    this.uploader.clearFileList();
-                };
+                });
+                // If not throwing the exception, tomcat (!?!) somehow tries to rehandle the file
+                // Or chrome, but it doesn't show any communication, anyways, by throwing it gets
+                // handling properly (except for stacktrace printed 3 times, thanks to Vaadin & Spring Boot)
+                throw error;
             }
         })
                 .withClearAutomatically(true)
@@ -438,7 +437,6 @@ public class Input extends Layout implements BeforeEnterObserver {
     private void deleteFileListItem(byte[] readedBytesFromFile, FileListItem fileListItem, String fileName) {
         customList.remove(fileListItem);
         mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
-        uploader.clearFileList();
         // Si borramos el que estaba seleccionado, limpiar la variable
         if (fileName.equals(selectedMainXsd)) {
             selectedMainXsd = StringUtils.EMPTY;
