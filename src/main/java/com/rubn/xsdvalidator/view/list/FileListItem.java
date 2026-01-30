@@ -65,6 +65,7 @@ public class FileListItem extends ListItem {
     @Getter
     private final Button buttonClose = new Button(LumoIcon.CROSS.create());
     private final ProgressBar progressBar = new ProgressBar();
+    @Getter
     private final SimpleCodeEditor simpleCodeEditor = new SimpleCodeEditor();
     private final Checkbox checkbox;
 
@@ -171,19 +172,15 @@ public class FileListItem extends ListItem {
     public void showXmlCode() {
         this.dialog.open();
         this.progressBar.setVisible(true);
-        Mono.fromRunnable(() -> {
-                    this.access(() -> {
-                        this.simpleCodeEditor.setContent(new String(this.mapPrefixFileNameAndContent.get(fileName)));
-                    });
-                })
+        Mono.fromSupplier(() -> new String(this.mapPrefixFileNameAndContent.get(fileName)))
                 .subscribeOn(Schedulers.boundedElastic())
                 .delaySubscription(Duration.ofMillis(700))
-                .doOnTerminate(() -> {
+                .doOnTerminate(() -> this.access(() -> this.progressBar.setVisible(false)))
+                .subscribe(content -> {
                     this.access(() -> {
-                        this.progressBar.setVisible(false);
+                        this.simpleCodeEditor.setContent(content);
                     });
-                })
-                .subscribe();
+                });
     }
 
     public void closeDialog() {
