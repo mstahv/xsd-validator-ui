@@ -2,7 +2,9 @@ import { ReactAdapterElement, RenderHooks } from 'Frontend/generated/flow/ReactA
 import React, { ReactElement, useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 
-function MyReactEditor({ content, onContentChange, themeName, wrapEnabled }: any) {
+function MyReactEditor({ content, onContentChange, themeName, wrapEnabled,
+    goToLine, lineTrigger}: any) {
+
     const [altPressed, setAltPressed] = useState(false);
     const editorRef = useRef<any>(null);
 
@@ -21,6 +23,20 @@ function MyReactEditor({ content, onContentChange, themeName, wrapEnabled }: any
             window.removeEventListener('blur', handleBlur);
         };
     }, []);
+
+    // Efecto para ir a una línea específica cuando Java lo solicite
+    useEffect(() => {
+        if (editorRef.current && goToLine) {
+            // revealLineInCenter hace que la línea aparezca en medio de la pantalla
+            editorRef.current.revealLineInCenter(goToLine);
+
+            // Opcional: Poner el cursor al inicio de esa línea
+            editorRef.current.setPosition({ lineNumber: goToLine, column: 1 });
+
+            // Opcional: Resaltar la línea brevemente o darle el foco
+            editorRef.current.focus();
+        }
+    }, [goToLine, lineTrigger]); // Se dispara cuando cambia la línea o el trigger
 
     function handleEditorDidMount(editor: any) {
         editorRef.current = editor;
@@ -82,12 +98,16 @@ class SimpleCodeEditorElement extends ReactAdapterElement {
         const [content, setContent] = hooks.useState<string>("content");
         const [theme] = hooks.useState<string>("theme");
         const [wordWrap] = hooks.useState<boolean>("wordWrap");
+        const [goToLine] = hooks.useState<number>("goToLine");
+        const [lineTrigger] = hooks.useState<number>("lineTrigger");
 
         return (
             <MyReactEditor
                 content={content}
                 themeName={theme}
                 wrapEnabled={wordWrap}
+                goToLine={goToLine}
+                lineTrigger={lineTrigger}
                 onContentChange={(newVal: string) => {
                     setContent(newVal);
                     this.dispatchEvent(new CustomEvent("editor-change", {

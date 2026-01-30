@@ -1,15 +1,13 @@
 package com.rubn.xsdvalidator.view.list;
 
-import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
-import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
-import com.rubn.xsdvalidator.util.XsdValidatorConstants;
+import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.view.SearchPopover;
 import com.rubn.xsdvalidator.view.SimpleCodeEditor;
+import com.rubn.xsdvalidator.view.SimpleCodeEditorDialog;
 import com.rubn.xsdvalidator.view.Span;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
@@ -18,15 +16,10 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.icon.AbstractIcon;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.theme.lumo.LumoIcon;
@@ -37,44 +30,27 @@ import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
-import org.jspecify.annotations.NonNull;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_ITEM;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.LIGHT;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.VS_DARK;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CLIPBOARD;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XML;
-import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 
 @Log4j2
 public class FileListItem extends ListItem {
 
     public static final String SIZE = "Size ⋅ ";
-    private Dialog dialog = new Dialog();
-
+    private final SimpleCodeEditorDialog simpleCodeEditorDialog;
     @Getter
     private final Button buttonClose = new Button(LumoIcon.CROSS.create());
-    private final ProgressBar progressBar = new ProgressBar();
     @Getter
-    private final SimpleCodeEditor simpleCodeEditor = new SimpleCodeEditor();
+    private final SimpleCodeEditor simpleCodeEditor;
     private final Checkbox checkbox;
 
     @Getter
     private final String fileName;
-
-    private final Map<String, byte[]> mapPrefixFileNameAndContent;
-    private final Span sizeSpan = new Span();
-    private SearchPopover searchPopover;
 
     public FileListItem(String prefixFileName, long contentLength,
                         BiConsumer<FileListItem, Boolean> onSelectionListener,
@@ -82,8 +58,6 @@ public class FileListItem extends ListItem {
                         SearchPopover searchPopover) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
-        this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
-        this.searchPopover = searchPopover;
 
         this.checkbox.addValueChangeListener(event -> {
             //Important! do not use event.isFromClient() in this condition
@@ -119,17 +93,25 @@ public class FileListItem extends ListItem {
         checkbox.addThemeVariants(CheckboxVariant.LUMO_HELPER_ABOVE_FIELD);
 
         String content = SIZE + XsdValidatorFileUtils.formatSize(contentLength);
-        this.sizeSpan.setText(content);
-        this.sizeSpan.addClassName(FontSize.XXSMALL);
-        this.sizeSpan.setWidthFull();
+        Span sizeSpan = new Span();
+        sizeSpan.setText(content);
+        sizeSpan.addClassName(FontSize.XXSMALL);
+        sizeSpan.setWidthFull();
 
-        super.setSecondary(this.sizeSpan, this.checkbox);
+        super.setSecondary(sizeSpan, this.checkbox);
         this.column.removeClassName(Padding.Vertical.XSMALL);
 
         setGap(Layout.Gap.SMALL);
 
-        this.dialog = this.buildDialog();
-        super.addDoubleClickListener(event -> this.showXmlCode());
+        this.simpleCodeEditorDialog = new SimpleCodeEditorDialog(fileName, mapPrefixFileNameAndContent, searchPopover,
+                sizeSpan);
+        this.simpleCodeEditor = simpleCodeEditorDialog.getSimpleCodeEditor();
+
+        super.addDoubleClickListener(eventClick -> {
+            if(eventClick.isFromClient()) {
+                this.checkbox.setValue(!this.checkbox.getValue());
+            }
+        });
 
     }
 
@@ -161,147 +143,11 @@ public class FileListItem extends ListItem {
         return this.checkbox.getValue();
     }
 
-    private List<String> getXsdXmlFiles() {
-        return mapPrefixFileNameAndContent.keySet()
-                .stream()
-                .filter(name -> name.toLowerCase().endsWith(XSD) || name.toLowerCase().endsWith(XML))
-                .sorted()
-                .toList();
-    }
-
-    public void showXmlCode() {
-        this.dialog.open();
-        this.progressBar.setVisible(true);
-        Mono.fromSupplier(() -> new String(this.mapPrefixFileNameAndContent.get(fileName)))
-                .subscribeOn(Schedulers.boundedElastic())
-                .delaySubscription(Duration.ofMillis(700))
-                .doOnTerminate(() -> this.access(() -> this.progressBar.setVisible(false)))
-                .subscribe(content -> {
-                    this.access(() -> {
-                        this.simpleCodeEditor.setContent(content);
-                    });
-                });
-    }
-
-    public void closeDialog() {
-        this.dialog.close();
-    }
-
-    public Dialog buildDialog() {
-        dialog.setSizeFull();
-        dialog.setCloseOnEsc(true);
-        dialog.addClassName("xml-visualizer-dialog");
-        final Button closeButton = this.buildCloseButton();
-        final Icon iconBackLeft = this.buildBackIconLeft();
-        dialog.getHeader().add(iconBackLeft);
-        //Header with title
-        final Span spanFileNameTitle = new Span(fileName);
-        spanFileNameTitle.addClassNames(FontSize.LARGE, LumoUtility.FontWeight.BOLD);
-        final SvgIcon copyButtonIcon = SvgFactory.createCopyButtonFromSvg();
-        final Button copyButton = new Button(copyButtonIcon);
-        copyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-        copyButton.addClickListener(event -> {
-            UI.getCurrent().getElement().executeJs(WINDOW_COPY_TO_CLIPBOARD, fileName);
-            Notification.show("Copied " + fileName, 2500, Notification.Position.MIDDLE)
-                    .addThemeVariants(NotificationVariant.LUMO_PRIMARY);
-            copyButton.setIcon(VaadinIcon.CHECK.create());
-            Mono.just(copyButton)
-                    .delayElement(Duration.ofMillis(1500))
-                    .subscribe(btn -> {
-                        btn.getUI().ifPresent(ui -> ui.access(() -> {
-                            btn.setIcon(copyButtonIcon);
-                        }));
-                    });
-        });
-        dialog.addClosedListener(event -> copyButton.setIcon(copyButtonIcon));
-        copyButton.setTooltipText("Copy filename!");
-        this.progressBar.setWidth("10%");
-        this.progressBar.setVisible(true);
-        this.progressBar.setIndeterminate(true);
-
-        Icon iconTheme = this.buildIconTheme();
-        SvgIcon iconWordWrap = this.buildIconWordWrap();
-        dialog.getHeader().add(spanFileNameTitle, copyButton, iconTheme, iconWordWrap, this.progressBar, closeButton);
-
-        simpleCodeEditor.addValueChangeListener(event -> {
-            String newContentStr = simpleCodeEditor.getContent();
-            if (newContentStr != null) {
-                byte[] newBytes = newContentStr.getBytes(StandardCharsets.UTF_8);
-                this.mapPrefixFileNameAndContent.put(fileName, newBytes);
-                simpleCodeEditor.setContent(newContentStr);
-                this.sizeSpan.setText(SIZE + XsdValidatorFileUtils.formatSize(newBytes.length));
-                this.searchPopover.updateItems(this.getXsdXmlFiles());
-                //log.info("Content: {}", simpleCodeEditor.getContent());
-            }
-        });
-        dialog.add(simpleCodeEditor);
-        //Footer with update code ?
-        final Button button = new Button("Update file", (event) -> {
-//            log.info("Content: {}", simpleCodeEditor.getContent());
-            String newContentStr = simpleCodeEditor.getContent();
-            if (newContentStr != null) {
-                byte[] newBytes = newContentStr.getBytes(StandardCharsets.UTF_8);
-                this.mapPrefixFileNameAndContent.put(fileName, newBytes);
-                simpleCodeEditor.setContent(newContentStr);
-                this.sizeSpan.setText(SIZE + XsdValidatorFileUtils.formatSize(newBytes.length));
-                ConfirmDialogBuilder.showInformation("Updated!");
-                this.searchPopover.updateItems(this.getXsdXmlFiles());
-            }
-        });
-        button.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
-        button.addThemeVariants(ButtonVariant.LUMO_SMALL);
-
-        dialog.getFooter().add(button);
-        return dialog;
-    }
-
-    private @NonNull Icon buildBackIconLeft() {
-        final Icon iconClose = VaadinIcon.ARROW_LEFT.create();
-        Tooltip.forComponent(iconClose).setText("Back");
-        iconClose.getStyle().setCursor(CURSOR_POINTER);
-        iconClose.addClassName(LumoUtility.TextColor.TERTIARY);
-        iconClose.addClickListener(event -> this.closeDialog());
-        return iconClose;
-    }
-
-    private @NonNull Button buildCloseButton() {
-        final Button closeButton = new Button(VaadinIcon.CLOSE.create());
-        closeButton.setTooltipText("Close");
-        closeButton.getStyle().setCursor(CURSOR_POINTER);
-        closeButton.addClassName(LumoUtility.Margin.Left.AUTO);
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        closeButton.addClickListener(e -> this.closeDialog());
-        return closeButton;
-    }
-
-    private Icon buildIconTheme() {
-        final Icon iconTheme = VaadinIcon.ADJUST.create();
-        Tooltip.forComponent(iconTheme)
-                .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
-                .withText("dark - ligth");
-        iconTheme.getStyle().setCursor(CURSOR_POINTER);
-        iconTheme.addClassName(FontSize.SMALL);
-        iconTheme.addClickListener(event -> {
-            String theme = simpleCodeEditor.getTheme().equals(VS_DARK) ? LIGHT : VS_DARK;
-            simpleCodeEditor.setTheme(theme);
-        });
-        return iconTheme;
-    }
-
-    private SvgIcon buildIconWordWrap() {
-        final SvgIcon iconTheme = SvgFactory.createIconFromSvg("word-wrap.svg", "25px", null);
-        Tooltip.forComponent(iconTheme)
-                .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
-                .withText("word wrap");
-        iconTheme.getStyle().setCursor(CURSOR_POINTER);
-        iconTheme.addClickListener(event -> simpleCodeEditor.setWordWrap(!simpleCodeEditor.getWordWrap()));
-        return iconTheme;
-    }
 
     public MenuItem buildContextMenuItem(FileListItem fileListItem) {
         ContextMenu contextMenu = this.buildContextMenu(fileListItem);
         contextMenu.addItem(this.createRowItemWithIcon("Edit", VaadinIcon.PENCIL.create(), "15px"),
-                event -> event.getSource().getUI().ifPresent(ui -> fileListItem.showXmlCode())
+                event -> event.getSource().getUI().ifPresent(ui -> simpleCodeEditorDialog.showXmlCode())
         ).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
         contextMenu.addSeparator();
         contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px")

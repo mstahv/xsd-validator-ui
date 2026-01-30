@@ -46,6 +46,13 @@ public class SimpleCodeEditor extends ReactAdapterComponent implements HasSize {
         return getState("wordWrap", Boolean.class);
     }
 
+    public void scrollToLine(int lineNumber) {
+        // Pasamos el número de línea al estado de React
+        setState("goToLine", lineNumber);
+        // Truco: usamos un trigger para que si llamamos dos veces a la misma línea, React lo note
+        setState("lineTrigger", System.currentTimeMillis());
+    }
+
     public void addValueChangeListener(SerializableConsumer<String> listener) {
         super.addStateChangeListener("content", String.class, listener);
     }

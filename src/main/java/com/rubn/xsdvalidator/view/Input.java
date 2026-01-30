@@ -4,12 +4,13 @@ import com.rubn.xsdvalidator.records.DecompressedFile;
 import com.rubn.xsdvalidator.service.DecompressionService;
 import com.rubn.xsdvalidator.service.ValidationXsdSchemaService;
 import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
-import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
+import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.view.list.CustomList;
 import com.rubn.xsdvalidator.view.list.FileListItem;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.UI;
@@ -311,39 +312,39 @@ public class Input extends Layout implements BeforeEnterObserver {
      */
     private UploadFileHandler buildUploadFileHandler(final Button uploadButtonAttachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
-                if (XsdValidatorFileUtils.isNotSupportedExtension(metadata.fileName())) {
-                    // Another improvement place for UploadFileHandler here, would be great to
-                    // have reference for component/ui in handler...
-                    access(() -> {
+            if (XsdValidatorFileUtils.isNotSupportedExtension(metadata.fileName())) {
+                // Another improvement place for UploadFileHandler here, would be great to
+                // have reference for component/ui in handler...
+                access(() -> {
 //                        Notification.show("File not supported! " + metadata.fileName(),
 //                                        2000, Notification.Position.MIDDLE)
 //                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        ConfirmDialogBuilder.showWarning("File not supported! " + metadata.fileName());
-                        uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
+                    ConfirmDialogBuilder.showWarning("File not supported! " + metadata.fileName());
+                    uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
+                });
+                // This sends 500 to browser and stop reading bytes
+                throw new IllegalArgumentException("File not supported!");
+            }
+            String fileName = metadata.fileName();
+            byte[] bytes;
+            List<DecompressedFile> decompressedFiles;
+            if (this.decompressionService.isCompressedFile(fileName)) {
+                decompressedFiles = this.decompressionService.decompressFile(fileName, inputStream);
+                bytes = null;
+            } else {
+                bytes = inputStream.readAllBytes();
+                decompressedFiles = null;
+            }
+            return () -> {
+                if (decompressedFiles != null) {
+                    decompressedFiles.forEach(decompressedFile -> {
+                        this.processFile(metadata, decompressedFile.content(), true, decompressedFile);
                     });
-                    // This sends 500 to browser and stop reading bytes
-                    throw new IllegalArgumentException("File not supported!");
-                }
-                String fileName = metadata.fileName();
-                byte[] bytes;
-                List<DecompressedFile> decompressedFiles;
-                if (this.decompressionService.isCompressedFile(fileName)) {
-                    decompressedFiles = this.decompressionService.decompressFile(fileName, inputStream);
-                    bytes = null;
                 } else {
-                    bytes = inputStream.readAllBytes();
-                    decompressedFiles = null;
+                    this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
                 }
-                return () -> {
-                    if(decompressedFiles != null) {
-                        decompressedFiles.forEach(decompressedFile -> {
-                            this.processFile(metadata, decompressedFile.content(), true, decompressedFile);
-                        });
-                    } else {
-                        this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
-                    }
-                    this.searchPopover.updateItems(this.getXsdXmlFiles());
-                };
+                this.searchPopover.updateItems(this.getXsdXmlFiles());
+            };
         })
                 .withClearAutomatically(true)
                 .withAddedClassName("upload-xml-xsd", LumoUtility.Padding.XSMALL, LumoUtility.Width.FULL,
@@ -432,18 +433,22 @@ public class Input extends Layout implements BeforeEnterObserver {
         final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);
         fileListItem.buildContextMenuItem(fileListItem)
                 .addClickListener(event -> {
-                    event.getSource().getUI().ifPresent(ui -> {
-                        ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
-                                .addConfirmListener(confirm -> {
-                                    this.deleteFileListItem(readedBytesFromFile, fileListItem, fileName);
-                                });
-                    });
+                    showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem);
                 });
         fileListItem.getButtonClose().addClickListener(event -> {
-            this.deleteFileListItem(readedBytesFromFile, fileListItem, fileName);
+            this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem);
         });
         customList.add(fileListItem);
 
+    }
+
+    private void showConfirmDialog(byte[] readedBytesFromFile, ClickEvent<?> event, String fileName, FileListItem fileListItem) {
+        event.getSource().getUI().ifPresent(ui -> {
+            ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
+                    .addConfirmListener(confirm -> {
+                        this.deleteFileListItem(readedBytesFromFile, fileListItem, fileName);
+                    });
+        });
     }
 
     private void deleteFileListItem(byte[] readedBytesFromFile, FileListItem fileListItem, String fileName) {
@@ -547,7 +552,7 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     @Override
     protected void onDetach(DetachEvent detachEvent) {
-        if(this.disposableStreaming != null) {
+        if (this.disposableStreaming != null) {
             this.disposableStreaming.dispose();
         }
     }
