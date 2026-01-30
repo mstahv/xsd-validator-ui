@@ -110,4 +110,9 @@ public class XsdValidatorConstants {
     public static final String XML_ICON = "file-xml-icon.svg";
     public static final String XSD_ICON = "xsd.svg";
     public static final String BADGE_PILL_SMALL = "badge pill small";
+    public static final String RETURN_TEXT_ERROR = """
+            return Array.from(this.querySelectorAll('.error-word'))
+                .map(span => span.textContent)
+                .join('')
+            """;
 }

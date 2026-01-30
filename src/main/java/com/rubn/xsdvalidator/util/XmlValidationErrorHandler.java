@@ -34,6 +34,6 @@ public class XmlValidationErrorHandler implements ErrorHandler {
     }
 
     private String formatMessage(SAXParseException e) {
-        return String.format("Línea %d, Columna %d: %s", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
+        return String.format("[Linea] [%d], Columna %d: %s", e.getLineNumber(), e.getColumnNumber(), e.getMessage());
     }
 }

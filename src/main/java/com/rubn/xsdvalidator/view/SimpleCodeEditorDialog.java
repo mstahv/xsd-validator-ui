@@ -145,6 +145,21 @@ public class SimpleCodeEditorDialog extends Dialog {
                 });
     }
 
+    public void searchLineOnEditor(String line, String fileName) {
+        super.open();
+        this.progressBar.setVisible(true);
+        Mono.fromSupplier(() -> new String(this.mapPrefixFileNameAndContent.get(fileName)))
+                .subscribeOn(Schedulers.boundedElastic())
+                .delaySubscription(Duration.ofMillis(700))
+                .doOnTerminate(() -> this.access(() -> this.progressBar.setVisible(false)))
+                .subscribe(content -> {
+                    this.access(() -> {
+                        this.simpleCodeEditor.setContent(content);
+                        this.simpleCodeEditor.scrollToLine(Integer.parseInt(line));
+                    });
+                });
+    }
+
     private @NonNull Button buildCloseButton() {
         final Button closeButton = new Button(VaadinIcon.CLOSE.create());
         closeButton.setTooltipText("Close");

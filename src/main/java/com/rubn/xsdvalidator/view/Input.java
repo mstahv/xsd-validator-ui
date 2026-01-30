@@ -62,12 +62,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_ITEM;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.JS_COMMAND;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.MENU_ITEM_NO_CHECKMARK;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.RETURN_TEXT_ERROR;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.SCROLLBAR_CUSTOM_STYLE;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.WINDOW_COPY_TO_CLIPBOARD;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XML;
@@ -79,6 +82,7 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 @Slf4j
 public class Input extends Layout implements BeforeEnterObserver {
 
+    public static final String ICON_SIZE_IN_PX = "15px";
     private final Map<String, byte[]> mapPrefixFileNameAndContent = new ConcurrentHashMap<>();
     private final AtomicInteger counterSpanId = new AtomicInteger(0);
     private final List<String> allErrorsList = new CopyOnWriteArrayList<>();
@@ -102,6 +106,7 @@ public class Input extends Layout implements BeforeEnterObserver {
     @Getter
     private SearchPopover searchPopover;
     private Disposable disposableStreaming;
+    private FileListItem fileListItem;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
                  final DecompressionService decompressionService,
@@ -113,12 +118,6 @@ public class Input extends Layout implements BeforeEnterObserver {
         verticalLayoutArea = new VerticalLayout();
         verticalLayoutArea.addClassNames("vertical-area");
         verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
-        final ContextMenu contextMenu = this.buildContextMenu(verticalLayoutArea);
-        contextMenu.addItem(this.createRowItemWithIcon("Clear errors", VaadinIcon.TRASH.create(), "15px"), event -> {
-            verticalLayoutArea.removeAll();
-            this.counterSpanId.set(0);
-            verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
-        }).addClassNames(CONTEXT_MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
 
         // attachment upload button
         attachment = new Button(VaadinIcon.UPLOAD.create());
@@ -259,14 +258,14 @@ public class Input extends Layout implements BeforeEnterObserver {
             }
         }));
 
-        final HorizontalLayout rowDownload = this.createRowItemWithIcon("Download errors", VaadinIcon.DOWNLOAD.create(), "18px");
+        final HorizontalLayout rowDownload = this.buildRowItemWithIcon("Download errors", VaadinIcon.DOWNLOAD.create(), "18px");
         this.anchorDownloadErrors.addComponentAsFirst(rowDownload);
         itemEllipsis.getSubMenu().addItem(this.anchorDownloadErrors).addClassNames(MENU_ITEM_NO_CHECKMARK);
 
         SvgIcon svgIcon = SvgFactory.createCopyButtonFromSvg();
         svgIcon.getStyle().setMarginLeft("-5px");
         svgIcon.getStyle().setMarginBottom("-6px");
-        var row = this.createRowItemWithIcon("Copy all text", svgIcon, "25px");
+        var row = this.buildRowItemWithIcon("Copy all text", svgIcon, "25px");
         row.getStyle().setGap("0.2em");
         row.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.BASELINE);
         MenuItem itemDelete = itemEllipsis.getSubMenu().addItem(row, event -> {
@@ -282,7 +281,7 @@ public class Input extends Layout implements BeforeEnterObserver {
 
         itemEllipsis.getSubMenu().addSeparator();
 
-        itemEllipsis.getSubMenu().addItem(this.createRowItemWithIcon("Clear files and text",
+        itemEllipsis.getSubMenu().addItem(this.buildRowItemWithIcon("Clear files and text",
                 VaadinIcon.TRASH.create(), "18px"), event -> {
             verticalLayoutArea.removeAll();
             verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
@@ -408,19 +407,40 @@ public class Input extends Layout implements BeforeEnterObserver {
         span.addClassName("parent-span");
         span.addClickListener(event -> {
             span.getId().ifPresent(id -> {
-                span.getElement().executeJs("""
-                        return Array.from(this.querySelectorAll('.error-word'))
-                            .map(span => span.textContent)
-                            .join('')
-                        """
-                ).then(String.class, textToCopy -> {
-                    UI.getCurrent().getPage().executeJs(WINDOW_COPY_TO_CLIPBOARD, textToCopy);
+                span.getElement().executeJs(RETURN_TEXT_ERROR
+                ).then(String.class, errorText -> {
+                    UI.getCurrent().getPage().executeJs(WINDOW_COPY_TO_CLIPBOARD, errorText);
                     Notification.show("Error #" + id + " copied!", 2000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_PRIMARY);
                 });
             });
         });
+        ContextMenu contextMenuSpan = this.buildContextMenu(span);
+        contextMenuSpan.addItem(this.buildRowItemWithIcon("Search error", VaadinIcon.SEARCH_PLUS.create(),
+                ICON_SIZE_IN_PX), event -> {
+            span.getElement().executeJs(RETURN_TEXT_ERROR)
+                    .then(String.class, errorText -> {
+                        final String lineError = this.extractLineNumber(errorText);
+                        fileListItem.searchForTextLineInTheEditor(lineError, this.selectedXmlFile);
+                    });
+        }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+
+        contextMenuSpan.addItem(this.buildRowItemWithIcon("Clear errors", VaadinIcon.TRASH.create(), ICON_SIZE_IN_PX), event -> {
+            verticalLayoutArea.removeAll();
+            this.counterSpanId.set(0);
+            verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
+        }).addClassNames(CONTEXT_MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
+
         return span;
+    }
+
+    public String extractLineNumber(String errorText) {
+        Pattern pattern = Pattern.compile("\\[Linea]\\s*\\[(\\d+)]");
+        Matcher matcher = pattern.matcher(errorText);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return StringUtils.EMPTY;
     }
 
     private void processFile(final UploadFileHandler.FileDetails metadata, byte[] readedBytesFromFile, boolean isCompressed,
@@ -430,7 +450,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         long contentLength = isCompressed ? decompressedFile.content().length : metadata.contentLenght();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
 
-        final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);
+        this.fileListItem = this.buildFileListItem(fileName, contentLength);
         fileListItem.buildContextMenuItem(fileListItem)
                 .addClickListener(event -> {
                     showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem);
@@ -486,10 +506,12 @@ public class Input extends Layout implements BeforeEnterObserver {
                                                                       Supplier<String> stateGetter) {
 
         return (item, isChecked) -> {
-            if (isChecked) {
+            if (isChecked) { // XML
                 stateSetter.accept(item.getFileName());
                 this.clearOtherSelections(item, extension);
-            } else {
+                //Cuando el XML es checkiado
+                //usaro para leer la linea de error y abrir el MonacoEditor
+            } else { // XSD
                 String currentSelection = stateGetter.get();
                 if (item.getFileName().equals(currentSelection)) {
                     stateSetter.accept(StringUtils.EMPTY);
@@ -521,7 +543,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         return contextMenu;
     }
 
-    private HorizontalLayout createRowItemWithIcon(final String titleForSpan, AbstractIcon<?> icon, String iconSizeInPx) {
+    private HorizontalLayout buildRowItemWithIcon(final String titleForSpan, AbstractIcon<?> icon, String iconSizeInPx) {
         final HorizontalLayout row = new HorizontalLayout();
         row.setId("row-with-icon");
         row.setSpacing(false);

@@ -8,7 +8,6 @@ import com.rubn.xsdvalidator.view.SimpleCodeEditor;
 import com.rubn.xsdvalidator.view.SimpleCodeEditorDialog;
 import com.rubn.xsdvalidator.view.Span;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UIDetachedException;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,7 +20,6 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.server.Command;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Background;
@@ -108,7 +106,7 @@ public class FileListItem extends ListItem {
         this.simpleCodeEditor = simpleCodeEditorDialog.getSimpleCodeEditor();
 
         super.addDoubleClickListener(eventClick -> {
-            if(eventClick.isFromClient()) {
+            if (eventClick.isFromClient()) {
                 this.checkbox.setValue(!this.checkbox.getValue());
             }
         });
@@ -173,13 +171,14 @@ public class FileListItem extends ListItem {
         return row;
     }
 
-    private void access(Command command) {
-        super.getUI().ifPresent(ui -> {
-            try {
-                ui.access(command);
-            } catch (UIDetachedException ex) {
-            }
-        });
+    /**
+     * View the error directly in the editor
+     *
+     * @param line with error
+     * @param xmlFileName with error
+     */
+    public void searchForTextLineInTheEditor(String line, String xmlFileName) {
+        this.simpleCodeEditorDialog.searchLineOnEditor(line, xmlFileName);
     }
 
 }
