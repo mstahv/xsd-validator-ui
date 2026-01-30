@@ -290,6 +290,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             this.anchorDownloadErrors.setEnabled(false);
             this.selectedMainXsd = StringUtils.EMPTY;
             this.selectedXmlFile = StringUtils.EMPTY;
+            this.searchPopover.updateItems(this.getXsdXmlFiles());
         }).addClassNames(MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
 
         itemEllipsis.getSubMenu()
@@ -529,6 +530,10 @@ public class Input extends Layout implements BeforeEnterObserver {
                         .map(item -> item.equals(StringUtils.LF) ? item.concat(StringUtils.LF) : item)
                         .toList())
                 .trim();
+    }
+
+    public void clearFileList() {
+        this.uploadFileHandler.getElement().executeJs("this.files = [];" + "return this.files;");
     }
 
     private void executeUI(Command command) {
