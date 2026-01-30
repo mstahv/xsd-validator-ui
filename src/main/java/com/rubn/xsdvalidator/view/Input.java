@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.vaadin.firitin.components.upload.UploadFileHandler;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -99,6 +100,7 @@ public class Input extends Layout implements BeforeEnterObserver {
     private String selectedMainXsd;
     @Getter
     private SearchPopover searchPopover;
+    private Disposable disposableStreaming;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
                  final DecompressionService decompressionService,
@@ -152,7 +154,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             }
         });
 
-        uploadFileHandler = this.buildUploadHandler(attachment);
+        uploadFileHandler = this.buildUploadFileHandler(attachment);
         Layout actions = new Layout(uploadFileHandler, validateButton);
         actions.addClassName("actions");
 
@@ -304,18 +306,19 @@ public class Input extends Layout implements BeforeEnterObserver {
      * Thanks to {@link <a href="https://github.com/mstahv">mstahv<a>} for helping to fix the error when uploading a large
      * file and several error notifications were displayed.
      *
-     * @param attachment
+     * @param uploadButtonAttachment
      * @return UploadFileHandler
      */
-    private UploadFileHandler buildUploadHandler(final Button attachment) {
+    private UploadFileHandler buildUploadFileHandler(final Button uploadButtonAttachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
                 if (XsdValidatorFileUtils.isNotSupportedExtension(metadata.fileName())) {
                     // Another improvement place for UploadFileHandler here, would be great to
                     // have reference for component/ui in handler...
-                    executeUI(() -> {
-                        Notification.show("File not supported!",
-                                        2000, Notification.Position.MIDDLE)
-                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    access(() -> {
+//                        Notification.show("File not supported! " + metadata.fileName(),
+//                                        2000, Notification.Position.MIDDLE)
+//                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        ConfirmDialogBuilder.showWarning("File not supported! " + metadata.fileName());
                         uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
                     });
                     // This sends 500 to browser and stop reading bytes
@@ -348,20 +351,21 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .withDragAndDrop(true)
                 .withDropLabelIcon(new Span())
                 .withDropLabel(new Span("Drop files here, only support: " + XsdValidatorConstants.SUPPORT_FILES))
-                .withUploadButton(attachment);
+                .withUploadButton(uploadButtonAttachment)
+                .withAllowMultiple(true);
     }
 
     private void validateXmlInputWithXsdSchema() {
         byte[] inputXml = this.mapPrefixFileNameAndContent.get(this.selectedXmlFile);
         byte[] inputXsdSchema = this.mapPrefixFileNameAndContent.get(this.selectedMainXsd);
 
-        this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema)
+        this.disposableStreaming = this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema)
                 .switchIfEmpty(Mono.defer(() -> {
-                    this.executeUI(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
+                    this.access(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
                     return Mono.empty();
                 }))
                 .doOnError(onError -> {
-                    this.executeUI(() -> {
+                    this.access(() -> {
 //                        log.error("Error validating: {}", xmlFileName, onError);
                         ConfirmDialogBuilder.showWarning("Validation error " + onError.getLocalizedMessage());
                         this.buildErrorSpanAndUpdate(onError.getLocalizedMessage());
@@ -370,7 +374,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .delayElements(Duration.ofMillis(50), Schedulers.boundedElastic())
                 .doOnTerminate(() -> {
                     log.info("Terminated!");
-                    this.executeUI(() -> validateButton.setEnabled(true));
+                    this.access(() -> validateButton.setEnabled(true));
                 })
                 .subscribe(word -> {
                     super.getUI().ifPresent(ui -> {
@@ -532,11 +536,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .trim();
     }
 
-    public void clearFileList() {
-        this.uploadFileHandler.getElement().executeJs("this.files = [];" + "return this.files;");
-    }
-
-    private void executeUI(Command command) {
+    private void access(Command command) {
         super.getUI().ifPresent(ui -> {
             try {
                 ui.access(command);
@@ -547,7 +547,9 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     @Override
     protected void onDetach(DetachEvent detachEvent) {
-
+        if(this.disposableStreaming != null) {
+            this.disposableStreaming.dispose();
+        }
     }
 
     @Override

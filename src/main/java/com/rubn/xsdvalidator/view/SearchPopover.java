@@ -288,8 +288,13 @@ public class SearchPopover extends Popover {
     }
 
     private void updateCounters() {
-        long countXsd = allXsdXmlFiles.stream().filter(name -> name.toLowerCase().endsWith(XSD)).count();
-        long countXml = allXsdXmlFiles.stream().filter(name -> name.toLowerCase().endsWith(XML)).count();
+        long countXsd = allXsdXmlFiles.stream()
+                .filter(name -> name.toLowerCase().endsWith(XSD))
+                .count();
+
+        long countXml = allXsdXmlFiles.stream()
+                .filter(name -> name.toLowerCase().endsWith(XML))
+                .count();
 
         configureSpan(totalSpan, "Total: " + allXsdXmlFiles.size());
         configureSpan(xsdSpan, "xsd: " + countXsd);
@@ -301,6 +306,7 @@ public class SearchPopover extends Popover {
         span.getElement().getThemeList().clear(); // Limpiar para evitar duplicados
         span.getElement().getThemeList().add(BADGE_PILL + " small");
         span.addClassNames(LumoUtility.TextColor.SECONDARY);
+        this.removeUserSelectInSpan(span);
         span.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
     }
 
@@ -313,7 +319,14 @@ public class SearchPopover extends Popover {
     private void configureBadgeButton(com.vaadin.flow.component.html.Span span) {
         span.getElement().getThemeList().add(BADGE_PILL + " " + THEME_INACTIVE);
         span.getStyle().setCursor(CURSOR_POINTER);
+        this.removeUserSelectInSpan(span);
         span.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
+    }
+
+    private void removeUserSelectInSpan(com.vaadin.flow.component.html.Span span) {
+        span.getStyle().set("user-select", "none");
+        span.getStyle().set("-webkit-user-select", "none");
+        span.getStyle().set("-moz-user-select", "none");
     }
 
     private void makeInactive(com.vaadin.flow.component.html.Span span) {
