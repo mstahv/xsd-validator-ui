@@ -4,10 +4,10 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+
 import lombok.Getter;
 import lombok.Value;
 import lombok.extern.log4j.Log4j2;
@@ -45,7 +45,7 @@ public class ConfirmDialogBuilder {
 
     public static void showInformationUI(String text, final UI ui) {
         final var confirmDialog = ConfirmDialogBuilder.builder()
-                .withHeaderIconAndHeaderText(VaadinIcon.INFO, INFORMATION)
+                .withHeaderIconAndHeaderText(VaadinIcon.INFO_CIRCLE_O, INFORMATION)
                 .withText(text)
                 .build();
         ui.addToModalComponent(confirmDialog);
@@ -53,7 +53,7 @@ public class ConfirmDialogBuilder {
 
     public static void showInformation(final String text) {
         ConfirmDialogBuilder.builder()
-                .withHeaderIconAndHeaderText(VaadinIcon.INFO, INFORMATION)
+                .withHeaderIconAndHeaderText(VaadinIcon.INFO_CIRCLE_O, INFORMATION)
                 .withText(text)
                 .build();
     }
@@ -129,18 +129,57 @@ public class ConfirmDialogBuilder {
         @Override
         @NonNull
         public ConfirmDialog build() {
-            final HorizontalLayout headerRow = new HorizontalLayout(icon.create(), new H3(headerText));
-            headerRow.setAlignItems(Alignment.CENTER);
-            confirmDialog.setHeader(headerRow);
+            Icon createdIcon = icon.create();
+            Span spanIcon = new Span(createdIcon);
+            spanIcon.getElement().setAttribute("aria-hidden", true);
+
+            Layout iconLayout = buildIconLayout(spanIcon);
+            Layout textLayout = buildTextLayout();
+
+            // Main layout
+            Layout layout = new Layout(iconLayout, textLayout);
+            layout.setAlignItems(Layout.AlignItems.START);
+            layout.setFlexDirection(Layout.FlexDirection.ROW);
+            layout.setGap(Layout.Gap.MEDIUM);
+
+            confirmDialog.setText(layout);
             confirmDialog.setConfirmText(OK);
+            confirmDialog.open();
+
+            return confirmDialog;
+        }
+
+        private @NonNull Layout buildIconLayout(Span spanIcon) {
+            Layout iconLayout = new Layout(spanIcon);
             if (icon == VaadinIcon.WARNING) {
                 confirmDialog.setConfirmButtonTheme("error primary");
+                spanIcon.addClassNames(LumoUtility.TextColor.ERROR);
+                iconLayout.addClassName(LumoUtility.Background.ERROR_10);
+            } else {
+                spanIcon.addClassNames(LumoUtility.TextColor.PRIMARY);
+                iconLayout.addClassName(LumoUtility.Background.PRIMARY_10);
             }
-            Span span = new Span(text);
-            span.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
-            confirmDialog.setText(span);
-            confirmDialog.open();
-            return confirmDialog;
+
+            iconLayout.setId("icon-layout");
+            iconLayout.addClassNames(LumoUtility.BorderRadius.FULL, LumoUtility.Flex.SHRINK_NONE,
+                    LumoUtility.Width.LARGE,  LumoUtility.Height.LARGE);
+            iconLayout.setAlignItems(Layout.AlignItems.CENTER);
+            iconLayout.setJustifyContent(Layout.JustifyContent.CENTER);
+            return iconLayout;
+        }
+
+        private @NonNull Layout buildTextLayout() {
+            Span spanText = new Span(text);
+            spanText.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+            final H3 h3HeaderText = new H3(headerText);
+            h3HeaderText.addClassName(LumoUtility.FontSize.MEDIUM);
+
+            Layout textLayout = new Layout(h3HeaderText, spanText);
+            textLayout.setFlexDirection(Layout.FlexDirection.COLUMN);
+            textLayout.setGap(Layout.Gap.SMALL);
+
+            textLayout.removeClassNames(LumoUtility.TextAlignment.CENTER);
+            return textLayout;
         }
 
     }
