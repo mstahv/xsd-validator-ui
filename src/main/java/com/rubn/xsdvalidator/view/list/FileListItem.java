@@ -2,6 +2,7 @@ package com.rubn.xsdvalidator.view.list;
 
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
+import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.view.SearchPopover;
 import com.rubn.xsdvalidator.view.SimpleCodeEditor;
@@ -35,6 +36,7 @@ import java.util.function.BiConsumer;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CONTEXT_MENU_ITEM_NO_CHECKMARK;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.DELETE_ITEM;
+import static com.rubn.xsdvalidator.util.XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW;
 
 @Log4j2
 public class FileListItem extends ListItem {
@@ -61,6 +63,11 @@ public class FileListItem extends ListItem {
             //Important! do not use event.isFromClient() in this condition
             if (event.getValue() != null) {
                 onSelectionListener.accept(this, event.getValue());
+            }
+            if(event.getValue()) {
+                getStyle().setBoxShadow(VAR_CUSTOM_BOX_SHADOW);
+            } else {
+                getStyle().setBoxShadow("unset");
             }
         });
 
@@ -108,6 +115,11 @@ public class FileListItem extends ListItem {
         super.addDoubleClickListener(eventClick -> {
             if (eventClick.isFromClient()) {
                 this.checkbox.setValue(!this.checkbox.getValue());
+            }
+            if(this.checkbox.getValue()) {
+                getStyle().setBoxShadow(VAR_CUSTOM_BOX_SHADOW);
+            } else {
+                getStyle().setBoxShadow("unset");
             }
         });
 
@@ -182,4 +194,3 @@ public class FileListItem extends ListItem {
     }
 
 }
-
