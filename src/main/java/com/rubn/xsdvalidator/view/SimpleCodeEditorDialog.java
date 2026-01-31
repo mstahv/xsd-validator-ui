@@ -50,11 +50,11 @@ public class SimpleCodeEditorDialog extends Dialog {
 
     private final String fileName;
     private final Map<String, byte[]> mapPrefixFileNameAndContent;
-    private final SearchPopover searchPopover;
+    private final SearchDialog searchPopover;
     private final Span sizeSpan;
 
     public SimpleCodeEditorDialog(String fileName, Map<String, byte[]> mapPrefixFileNameAndContent,
-                                  SearchPopover searchPopover, Span sizeSpan) {
+                                  SearchDialog searchPopover, Span sizeSpan) {
         this.fileName = fileName;
         this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
         this.searchPopover = searchPopover;
@@ -66,7 +66,7 @@ public class SimpleCodeEditorDialog extends Dialog {
     public void buildContentDialog() {
         super.setSizeFull();
         super.setCloseOnEsc(true);
-        super.addClassName("xml-visualizer-dialog");
+        super.addClassName("simple-code-editor-dialog");
         final Button closeButton = this.buildCloseButton();
         final Icon iconBackLeft = this.buildBackIconLeft();
         super.getHeader().add(iconBackLeft);

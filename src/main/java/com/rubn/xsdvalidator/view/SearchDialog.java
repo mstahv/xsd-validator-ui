@@ -5,17 +5,21 @@ import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.ModalityMode;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.popover.Popover;
-import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.shared.SelectionPreservationMode;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.log4j.Log4j2;
 import org.jspecify.annotations.NonNull;
@@ -41,7 +45,7 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD_ICON;
  * @author rubn
  */
 @Log4j2
-public class SearchPopover extends Popover {
+public class SearchDialog extends Dialog {
 
     public static final String BADGE_PILL = "badge pill";
     public static final String THEME_INACTIVE = "contrast";
@@ -59,23 +63,16 @@ public class SearchPopover extends Popover {
     private List<String> allXsdXmlFiles;
     private List<String> currentVisibleItems;
 
-    public SearchPopover(TextField searchField, List<String> rawFileList, String initialXsdSelection,
-                         String initialXmlSelection,
-                         Consumer<Set<String>> onSelectCallback,
-                         final Map<String, byte[]> mapPrefixFileNameAndContent) {
+    public SearchDialog(List<String> rawFileList, String initialXsdSelection,
+                        String initialXmlSelection,
+                        Consumer<Set<String>> onSelectCallback,
+                        final Map<String, byte[]> mapPrefixFileNameAndContent) {
 
-        this.searchField = searchField;
-
-        super.addClassName("search-popover-content");
+        super.addClassName("search-dialog-content");
         super.setWidth("500px");
-        super.setModal(false);
-        super.setBackdropVisible(true);
-        this.setCloseOnOutsideClick(true);
-        super.setPosition(PopoverPosition.BOTTOM_END);
-        super.setTarget(searchField);
-//        this.searchField.getElement().executeJs(
-//                "this.addEventListener('click', function(e) { e.stopPropagation(); });"
-//        );
+        super.setModality(ModalityMode.STRICT);
+        super.setCloseOnOutsideClick(true);
+        this.searchField = this.buildSearchTextField();
         // Center div with not found item
         Span spanNotSearchFound = new Span("Item not found!");
         spanNotSearchFound.addClassName(LumoUtility.TextColor.SECONDARY);
@@ -85,13 +82,6 @@ public class SearchPopover extends Popover {
                 LumoUtility.Width.FULL,
                 LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.JustifyContent.CENTER, LumoUtility.AlignItems.CENTER);
-
-        this.searchField.addValueChangeListener(e -> {
-//            if (!this.isOpened()) {
-//                this.setOpened(true);
-//            }
-            this.filterList(e.getValue());
-        });
 
         if (initialXsdSelection != null && rawFileList.contains(initialXsdSelection)) {
             currentSelection.add(initialXsdSelection);
@@ -207,11 +197,29 @@ public class SearchPopover extends Popover {
 
         final Hr hrLineFooter = buildHrSeparator();
 
-        VerticalLayout layout = new VerticalLayout(filtersBadges, hrLine, listBox, divCenterSpanNotSearch, hrLineFooter, rowFooter);
+        VerticalLayout layout = new VerticalLayout(searchField, filtersBadges, hrLine, listBox, divCenterSpanNotSearch, hrLineFooter, rowFooter);
         layout.setPadding(false);
         layout.setSpacing(false);
         layout.setMargin(false);
         super.add(layout);
+    }
+
+    public TextField buildSearchTextField() {
+        final TextField textField = new TextField();
+        textField.setWidthFull();
+        textField.setClearButtonVisible(true);
+        textField.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+        final Span animatedText = new Span();
+        animatedText.addClassName("search-animation");
+        final Icon icon = VaadinIcon.SEARCH.create();
+        icon.setSize("15px");
+        var row = new HorizontalLayout(icon, animatedText);
+        row.setSpacing("var(--lumo-space-xs)");
+        textField.setPrefixComponent(row);
+        textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        textField.setValueChangeMode(ValueChangeMode.EAGER);
+        textField.addValueChangeListener(event -> this.filterList(event.getValue()));
+        return textField;
     }
 
     public void updateSelectionFromOutside(String xsdSelection, String xmlSelection) {
@@ -246,6 +254,7 @@ public class SearchPopover extends Popover {
     @Override
     public void open() {
         super.open();
+        this.searchField.focus();
     }
 
     private void sortAndSetItems(List<String> items) {

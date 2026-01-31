@@ -129,3 +129,14 @@ vaadin-menu-bar-item.delete:hover {
     90%  { content: " .xsd"; width: 4ch; }
     100% { content: " .xsd"; width: 0;    border-color: transparent;}
 }
+
+vaadin-button.button-search {
+    width: 300px;
+    border: 1px var(--lumo-utility-border-style, solid) var(--lumo-utility-border-color, var(--lumo-contrast-10pct));
+    cursor: pointer;
+    color: var(--lumo-secondary-text-color);
+}
+
+vaadin-button.button-search::part(prefix) {
+    margin-inline-end: auto;
+}

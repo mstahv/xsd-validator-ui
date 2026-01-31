@@ -6,6 +6,8 @@ import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.Shortcuts;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Main;
 import com.vaadin.flow.component.icon.Icon;
@@ -14,9 +16,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.textfield.TextFieldVariant;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -39,7 +38,6 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 @JsModule(COPY_TO_CLIPBOARD)
 class XsdValidatorView extends Main {
 
-    private final TextField searchField = new TextField();
     private final ProgressBar progressBar = new ProgressBar();
 
     public XsdValidatorView(final ValidationXsdSchemaService validationXsdSchemaService,
@@ -47,8 +45,8 @@ class XsdValidatorView extends Main {
         setSizeFull();
         getStyle().setOverflow(Style.Overflow.VISIBLE);
 
-        final Input input = new Input(validationXsdSchemaService, decompressionService, searchField, progressBar);
-        add(new ViewToolbar(StringUtils.EMPTY, this.buildSearch(input), this.createInfoIcon()));
+        final Input input = new Input(validationXsdSchemaService, decompressionService, progressBar);
+        add(new ViewToolbar(StringUtils.EMPTY, this.buildSearchButton(input), this.createInfoIcon()));
         add(input, progressBar);
 
     }
@@ -65,24 +63,21 @@ class XsdValidatorView extends Main {
         return span;
     }
 
-    private TextField buildSearch(Input input) {
-
-        searchField.setWidth("500px");
-        searchField.setClearButtonVisible(true);
-        final SearchPopover searchPopover = input.getSearchPopover();
-
-        searchField.getStyle().setCursor(CURSOR_POINTER);
-//        searchField.getStyle().setBorder("1px var(--lumo-utility-border-style, solid) var(--lumo-utility-border-color, var(--lumo-contrast-10pct))");
-        searchField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        searchField.setValueChangeMode(ValueChangeMode.EAGER);
-        searchField.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+    private Button buildSearchButton(Input input) {
+        final Button buttonSearch = new Button();
+        buttonSearch.addClassName("button-search");
+        final SearchDialog searchDialog = input.getSearchDialog();
+        buttonSearch.addClickListener(event -> searchDialog.open());
+//        buttonSearch.getStyle().setCursor(CURSOR_POINTER);
+//        buttonSearch.getStyle().setBorder("1px var(--lumo-utility-border-style, solid) var(--lumo-utility-border-color, var(--lumo-contrast-10pct))");
+        buttonSearch.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        buttonSearch.addClassName(LumoUtility.TextColor.SECONDARY);
         final Span spanShortCut = new Span("Ctrl K");
         spanShortCut.getStyle().setCursor(CURSOR_POINTER);
         spanShortCut.getElement().getThemeList().add("badge small pill constrast");
         spanShortCut.getStyle().setBoxShadow(XsdValidatorConstants.VAR_CUSTOM_BOX_SHADOW);
-        Shortcuts.addShortcutListener(searchField, listener -> {
-            searchPopover.open();
-            searchField.focus();
+        Shortcuts.addShortcutListener(buttonSearch, listener -> {
+            searchDialog.open();
         }, Key.KEY_K, KeyModifier.CONTROL);
 
         final Span animatedText = new Span();
@@ -94,12 +89,12 @@ class XsdValidatorView extends Main {
         var row = new HorizontalLayout(icon, animatedText);
         row.setSpacing("var(--lumo-space-xs)");
         row.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        searchField.setPrefixComponent(row);
-        searchField.setSuffixComponent(spanShortCut);
-        searchField.addClassName(LumoUtility.FontSize.SMALL);
-        searchField.setTooltipText("Search xsd or xml");
+        buttonSearch.setPrefixComponent(row);
+        buttonSearch.setSuffixComponent(spanShortCut);
+        //buttonSearch.addClassName(LumoUtility.FontSize.SMALL);
+        buttonSearch.setTooltipText("Search xsd or xml");
 
-        return searchField;
+        return buttonSearch;
     }
 
 }

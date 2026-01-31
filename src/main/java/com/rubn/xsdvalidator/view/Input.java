@@ -33,7 +33,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.server.Command;
@@ -106,13 +105,12 @@ public class Input extends Layout implements BeforeEnterObserver {
     private String selectedXmlFile;
     private String selectedMainXsd;
     @Getter
-    private SearchPopover searchPopover;
+    private SearchDialog searchDialog;
     private Disposable disposableStreaming;
     private FileListItem fileListItem;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
                  final DecompressionService decompressionService,
-                 final TextField searchField,
                  final ProgressBar progressBarFileListItem) {
         this.validationXsdSchemaService = validationXsdSchemaService;
         this.decompressionService = decompressionService;
@@ -166,13 +164,13 @@ public class Input extends Layout implements BeforeEnterObserver {
         Layout actions = new Layout(uploadFileHandler, validateButton);
         actions.addClassName("actions");
 
-        this.searchPopover = this.buildPopover(searchField, List.of());
+        this.searchDialog = this.buildDialog(List.of());
 
-        add(divHeader, verticalLayoutArea, actions);
+        add(divHeader, verticalLayoutArea, actions, searchDialog);
     }
 
-    public SearchPopover buildPopover(TextField searchTextField, List<String> xsdXmlFiles) {
-        return new SearchPopover(searchTextField, xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
+    public SearchDialog buildDialog(List<String> xsdXmlFiles) {
+        return new SearchDialog(xsdXmlFiles, this.selectedMainXsd, this.selectedXmlFile,
                 this::synchronizeListFromPopover, mapPrefixFileNameAndContent);
     }
 
@@ -299,7 +297,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             this.anchorDownloadErrors.setEnabled(false);
             this.selectedMainXsd = StringUtils.EMPTY;
             this.selectedXmlFile = StringUtils.EMPTY;
-            this.searchPopover.updateItems(this.getXsdXmlFiles());
+            this.searchDialog.updateItems(this.getXsdXmlFiles());
         }).addClassNames(MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
 
         itemEllipsis.getSubMenu()
@@ -352,7 +350,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
                 }
                 this.progressBarFileListItem.setVisible(false);
-                this.searchPopover.updateItems(this.getXsdXmlFiles());
+                this.searchDialog.updateItems(this.getXsdXmlFiles());
             };
         })
                 .withClearAutomatically(true)
@@ -377,8 +375,14 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .doOnError(onError -> {
                     this.access(() -> {
 //                        log.error("Error validating: {}", xmlFileName, onError);
-                        ConfirmDialogBuilder.showWarning("Validation error " + onError.getLocalizedMessage());
-                        this.buildErrorSpanAndUpdate(onError.getLocalizedMessage());
+                        String errorWord = onError.getLocalizedMessage();
+//                        ConfirmDialogBuilder.showWarning("Validation error " + errorWord);
+//                        this.buildErrorSpanAndUpdate(onError.getLocalizedMessage());
+                        this.spanWordError = this.buildErrorSpan();
+                        verticalLayoutArea.add(this.spanWordError);
+                        this.allErrorsList.add(StringUtils.LF);
+                        this.allErrorsList.add(errorWord);
+                        this.spanWordError.getElement().executeJs(JS_COMMAND, errorWord);
                     });
                 })
                 .delayElements(Duration.ofMillis(50), Schedulers.boundedElastic())
@@ -487,7 +491,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         if (fileName.equals(this.selectedXmlFile)) {
             selectedXmlFile = StringUtils.EMPTY;
         }
-        this.searchPopover.updateItems(this.getXsdXmlFiles());
+        this.searchDialog.updateItems(this.getXsdXmlFiles());
     }
 
     private FileListItem buildFileListItem(String fileName, long contentLength) {
@@ -505,7 +509,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             );
         }
 
-        return new FileListItem(fileName, contentLength, onItemSelected, mapPrefixFileNameAndContent, this.searchPopover);
+        return new FileListItem(fileName, contentLength, onItemSelected, mapPrefixFileNameAndContent, this.searchDialog);
     }
 
     private BiConsumer<FileListItem, Boolean> createSelectionListener(String extension, Consumer<String> stateSetter,
@@ -523,8 +527,8 @@ public class Input extends Layout implements BeforeEnterObserver {
                     stateSetter.accept(StringUtils.EMPTY);
                 }
             }
-            if (this.searchPopover != null) {
-                this.searchPopover.updateSelectionFromOutside(this.selectedMainXsd, this.selectedXmlFile);
+            if (this.searchDialog != null) {
+                this.searchDialog.updateSelectionFromOutside(this.selectedMainXsd, this.selectedXmlFile);
             }
         };
     }

@@ -3,7 +3,7 @@ package com.rubn.xsdvalidator.view.list;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
-import com.rubn.xsdvalidator.view.SearchPopover;
+import com.rubn.xsdvalidator.view.SearchDialog;
 import com.rubn.xsdvalidator.view.SimpleCodeEditor;
 import com.rubn.xsdvalidator.view.SimpleCodeEditorDialog;
 import com.rubn.xsdvalidator.view.Span;
@@ -54,7 +54,7 @@ public class FileListItem extends ListItem {
     public FileListItem(String prefixFileName, long contentLength,
                         BiConsumer<FileListItem, Boolean> onSelectionListener,
                         final Map<String, byte[]> mapPrefixFileNameAndContent,
-                        SearchPopover searchPopover) {
+                        SearchDialog searchPopover) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
 

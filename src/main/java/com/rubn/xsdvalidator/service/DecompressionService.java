@@ -65,7 +65,7 @@ public class DecompressionService {
                     byte[] content = fbaos.toByteArray();
                     files.add(new DecompressedFile(entry.getName(), content, entry.getSize()));
                     fbaos.reset();
-                    log.info("Descomprimido: {} ({} bytes)", entry.getName(), entry.getSize());
+                    log.info("Descomprimido: {} ({} bytes) Thread-name: [{}]", entry.getName(), entry.getSize(), Thread.currentThread().getName());
                 }
                 zis.closeEntry();
             }
