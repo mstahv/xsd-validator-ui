@@ -12,6 +12,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -39,15 +40,17 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 class XsdValidatorView extends Main {
 
     private final TextField searchField = new TextField();
+    private final ProgressBar progressBar = new ProgressBar();
 
     public XsdValidatorView(final ValidationXsdSchemaService validationXsdSchemaService,
                             final DecompressionService decompressionService) {
         setSizeFull();
         getStyle().setOverflow(Style.Overflow.VISIBLE);
 
-        final Input input = new Input(validationXsdSchemaService, decompressionService, searchField);
+        final Input input = new Input(validationXsdSchemaService, decompressionService, searchField, progressBar);
         add(new ViewToolbar(StringUtils.EMPTY, this.buildSearch(input), this.createInfoIcon()));
-        add(input);
+        add(input, progressBar);
+
     }
 
     private Span createInfoIcon() {

@@ -11,7 +11,7 @@
 }
 
 .file-list-item:hover {
-  box-shadow: var(--custom-box-shadow);
+  /*box-shadow: var(--custom-box-shadow);*/
 }
 
 .file-list-item span {

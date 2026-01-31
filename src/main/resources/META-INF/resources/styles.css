@@ -8,6 +8,7 @@
 @import url("./styles/search-dialog.css");
 @import url("./styles/xml-visualizer-dialog.css");
 @import url("./styles/error-view.css");
+@import url("./styles/progressbar-file-list-items.css");
 
 html {
   --lumo-font-family: 'Arimo', sans-serif;

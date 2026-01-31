@@ -1,8 +1,8 @@
 package com.rubn.xsdvalidator.view;
 
-import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
+import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.html.Div;

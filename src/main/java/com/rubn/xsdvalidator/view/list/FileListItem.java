@@ -2,7 +2,6 @@ package com.rubn.xsdvalidator.view.list;
 
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
-import com.rubn.xsdvalidator.util.XsdValidatorConstants;
 import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
 import com.rubn.xsdvalidator.view.SearchPopover;
 import com.rubn.xsdvalidator.view.SimpleCodeEditor;

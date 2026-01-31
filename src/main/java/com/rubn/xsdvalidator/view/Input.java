@@ -31,6 +31,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -82,6 +83,7 @@ import static com.rubn.xsdvalidator.util.XsdValidatorConstants.XSD;
 @Slf4j
 public class Input extends Layout implements BeforeEnterObserver {
 
+    public final ProgressBar progressBarFileListItem;
     public static final String ICON_SIZE_IN_PX = "15px";
     private final Map<String, byte[]> mapPrefixFileNameAndContent = new ConcurrentHashMap<>();
     private final AtomicInteger counterSpanId = new AtomicInteger(0);
@@ -110,9 +112,11 @@ public class Input extends Layout implements BeforeEnterObserver {
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
                  final DecompressionService decompressionService,
-                 final TextField searchField) {
+                 final TextField searchField,
+                 final ProgressBar progressBarFileListItem) {
         this.validationXsdSchemaService = validationXsdSchemaService;
         this.decompressionService = decompressionService;
+        this.progressBarFileListItem = progressBarFileListItem;
         addClassName("input-layout");
         // Text area
         verticalLayoutArea = new VerticalLayout();
@@ -125,6 +129,10 @@ public class Input extends Layout implements BeforeEnterObserver {
         attachment.addThemeVariants(ButtonVariant.LUMO_SMALL);
         attachment.setAriaLabel("Attachment");
         attachment.setTooltipText("Attachment");
+
+        this.progressBarFileListItem.setVisible(false);
+        this.progressBarFileListItem.setIndeterminate(true);
+        this.progressBarFileListItem.addClassName("progressbar-file-list-items");
 
         this.customList = new CustomList();
         this.anchorDownloadErrors = new Anchor();
@@ -207,7 +215,6 @@ public class Input extends Layout implements BeforeEnterObserver {
                 // CASO B: NO está en el Popover (fue deseleccionado) -> Lo desmarcamos
                 if (item.isChecked()) {
                     item.setSelected(false);
-
                     // Limpiamos variables de estado locales
                     if (fileName.equals(this.selectedXmlFile)) this.selectedXmlFile = null;
                     if (fileName.equals(this.selectedMainXsd)) this.selectedMainXsd = null;
@@ -311,6 +318,7 @@ public class Input extends Layout implements BeforeEnterObserver {
      */
     private UploadFileHandler buildUploadFileHandler(final Button uploadButtonAttachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
+            this.access(() -> this.progressBarFileListItem.setVisible(true));
             if (XsdValidatorFileUtils.isNotSupportedExtension(metadata.fileName())) {
                 // Another improvement place for UploadFileHandler here, would be great to
                 // have reference for component/ui in handler...
@@ -320,6 +328,7 @@ public class Input extends Layout implements BeforeEnterObserver {
 //                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     ConfirmDialogBuilder.showWarning("File not supported! " + metadata.fileName());
                     uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
+                    this.progressBarFileListItem.setVisible(false);
                 });
                 // This sends 500 to browser and stop reading bytes
                 throw new IllegalArgumentException("File not supported!");
@@ -342,6 +351,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                 } else {
                     this.processFile(metadata, bytes, false, new DecompressedFile(null, null, 0L));
                 }
+                this.progressBarFileListItem.setVisible(false);
                 this.searchPopover.updateItems(this.getXsdXmlFiles());
             };
         })
@@ -452,12 +462,8 @@ public class Input extends Layout implements BeforeEnterObserver {
 
         this.fileListItem = this.buildFileListItem(fileName, contentLength);
         fileListItem.buildContextMenuItem(fileListItem)
-                .addClickListener(event -> {
-                    showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem);
-                });
-        fileListItem.getButtonClose().addClickListener(event -> {
-            this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem);
-        });
+                .addClickListener(event -> this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem));
+        fileListItem.getButtonClose().addClickListener(event -> this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem));
         customList.add(fileListItem);
 
     }
