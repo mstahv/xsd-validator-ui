@@ -382,7 +382,6 @@ public class Input extends Layout implements BeforeEnterObserver {
                     super.getUI().ifPresent(ui -> {
                         ui.access(() -> {
                             if (!word.isEmpty()) {
-//                                log.info(word);
                                 this.buildErrorSpanAndUpdate(word);
                                 this.anchorDownloadErrors.setEnabled(!allErrorsList.isEmpty());
                             }
