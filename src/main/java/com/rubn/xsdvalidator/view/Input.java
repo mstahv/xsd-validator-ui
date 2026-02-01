@@ -372,19 +372,7 @@ public class Input extends Layout implements BeforeEnterObserver {
                     this.access(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
                     return Mono.empty();
                 }))
-                .doOnError(onError -> {
-                    this.access(() -> {
-//                        log.error("Error validating: {}", xmlFileName, onError);
-                        String errorWord = onError.getLocalizedMessage();
-//                        ConfirmDialogBuilder.showWarning("Validation error " + errorWord);
-//                        this.buildErrorSpanAndUpdate(onError.getLocalizedMessage());
-                        this.spanWordError = this.buildErrorSpan();
-                        verticalLayoutArea.add(this.spanWordError);
-                        this.allErrorsList.add(StringUtils.LF);
-                        this.allErrorsList.add(errorWord);
-                        this.spanWordError.getElement().executeJs(JS_COMMAND, errorWord);
-                    });
-                })
+                .doOnError(this::onError)
                 .delayElements(Duration.ofMillis(50), Schedulers.boundedElastic())
                 .doOnTerminate(() -> {
                     log.info("Terminated!");
@@ -401,6 +389,17 @@ public class Input extends Layout implements BeforeEnterObserver {
                         });
                     });
                 });
+    }
+
+    private void onError(Throwable onError) {
+        this.access(() -> {
+            String errorWord = onError.getLocalizedMessage();
+            this.allErrorsList.add(StringUtils.LF);
+            this.allErrorsList.add(errorWord);
+            this.spanWordError = this.buildErrorSpan();
+            verticalLayoutArea.add(this.spanWordError);
+            this.spanWordError.getElement().executeJs(JS_COMMAND, errorWord);
+        });
     }
 
     private void buildErrorSpanAndUpdate(String word) {

@@ -28,10 +28,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.BADGE_PILL_SMALL;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
@@ -62,6 +64,7 @@ public class SearchDialog extends Dialog {
 
     private List<String> allXsdXmlFiles;
     private List<String> currentVisibleItems;
+    private Map<String, byte[]> mapPrefixFileNameAndContent;
 
     public SearchDialog(List<String> rawFileList, String initialXsdSelection,
                         String initialXmlSelection,
@@ -70,8 +73,9 @@ public class SearchDialog extends Dialog {
 
         super.addClassName("search-dialog-content");
         super.setWidth("500px");
-        super.setModality(ModalityMode.STRICT);
+        super.setModality(ModalityMode.VISUAL);//prevent innet problem
         super.setCloseOnOutsideClick(true);
+        this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
         this.searchField = this.buildSearchTextField();
         // Center div with not found item
         Span spanNotSearchFound = new Span("Item not found!");
@@ -94,7 +98,7 @@ public class SearchDialog extends Dialog {
         this.currentVisibleItems = new ArrayList<>(rawFileList);
 
         // Ordenar inicialmente
-        sortAndSetItems(this.allXsdXmlFiles);
+        this.sortAndSetItems(this.allXsdXmlFiles);
 
         listBox.setVisible(false);
         listBox.setValue(currentSelection);
@@ -110,8 +114,7 @@ public class SearchDialog extends Dialog {
             icon.setSize("40px");
 
             // sizeInBytes to length String
-            byte[] bytes = mapPrefixFileNameAndContent.get(paramfileName);
-            long sizeInBytes = bytes != null ? bytes.length : 0;
+            long sizeInBytes = this.getSizeInBytes(paramfileName);
             String formattedSize = XsdValidatorFileUtils.formatSize(sizeInBytes);
 
             Span spanParamFileName = new Span(paramfileName);
@@ -163,29 +166,28 @@ public class SearchDialog extends Dialog {
         HorizontalLayout filtersBadges = new HorizontalLayout();
         filtersBadges.getStyle().setPadding("var(--lumo-space-xs)");
         filtersBadges.setSpacing("var(--lumo-space-s)");
-        com.vaadin.flow.component.html.Span btnXml = new com.vaadin.flow.component.html.Span(XML);
-        com.vaadin.flow.component.html.Span btnXsd = new com.vaadin.flow.component.html.Span(XSD);
-        configureBadgeButton(btnXml);
-        configureBadgeButton(btnXsd);
+        com.vaadin.flow.component.html.Span spanXml = new com.vaadin.flow.component.html.Span(XML);
+        com.vaadin.flow.component.html.Span spanXsd = new com.vaadin.flow.component.html.Span(XSD);
+        com.vaadin.flow.component.html.Span spanSize = new com.vaadin.flow.component.html.Span("Size");
+        Stream.of(spanXml, spanXsd, spanSize).forEach(this::configureBadgeSpan);
 
         ComponentEventListener<ClickEvent<com.vaadin.flow.component.html.Span>> listener = event -> {
             com.vaadin.flow.component.html.Span clicked = event.getSource();
             boolean wasActive = !clicked.getElement().getThemeList().contains(THEME_INACTIVE);
-            makeInactive(btnXml);
-            makeInactive(btnXsd);
+            Stream.of(spanXml, spanXsd, spanSize).forEach(this::makeInactive);
+
             if (wasActive) {
-                filterList(this.searchField.getValue());
+                this.filterList(this.searchField.getValue(), false);
             } else {
                 clicked.getElement().getThemeList().remove(THEME_INACTIVE);
-                String value = !this.searchField.getValue().isEmpty() ? this.searchField.getValue() : clicked.getText();
-                filterList(value);
+                String value = clicked.getText();
+                boolean filterBySize = Objects.equals(value, spanSize.getText());
+                this.filterList(value, filterBySize);
             }
         };
 
-        btnXml.addClickListener(listener);
-        btnXsd.addClickListener(listener);
-        filtersBadges.add(btnXml, btnXsd);
-
+        Stream.of(spanXml, spanXsd, spanSize).forEach(span -> span.addClickListener(listener));
+        filtersBadges.add(spanXml, spanXsd, spanSize);
         final Hr hrLine = buildHrSeparator();
 
         final HorizontalLayout rowFooter = new HorizontalLayout();
@@ -204,6 +206,11 @@ public class SearchDialog extends Dialog {
         super.add(layout);
     }
 
+    private long getSizeInBytes(String paramfileName) {
+        byte[] bytes = this.mapPrefixFileNameAndContent.get(paramfileName);
+        return bytes != null ? bytes.length : 0;
+    }
+
     public TextField buildSearchTextField() {
         final TextField textField = new TextField();
         textField.setWidthFull();
@@ -218,7 +225,7 @@ public class SearchDialog extends Dialog {
         textField.setPrefixComponent(row);
         textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         textField.setValueChangeMode(ValueChangeMode.EAGER);
-        textField.addValueChangeListener(event -> this.filterList(event.getValue()));
+        textField.addValueChangeListener(event -> this.filterList(event.getValue(), false));
         return textField;
     }
 
@@ -247,14 +254,44 @@ public class SearchDialog extends Dialog {
      */
     public void updateItems(List<String> newItems) {
         this.allXsdXmlFiles = List.copyOf(newItems);
-        this.filterList(searchField.getValue());
+        this.filterList(searchField.getValue(), false);
         this.updateCounters();
     }
 
     @Override
     public void open() {
+        this.searchField.clear();
         super.open();
         this.searchField.focus();
+    }
+
+    private void filterList(String filterText, boolean filterBySize) {
+        List<String> itemsToShow;
+
+        if(filterBySize) {
+            itemsToShow = allXsdXmlFiles.stream()
+                    .sorted(Comparator.comparingLong(this::getSizeInBytes).reversed())
+                    .toList();
+        } else {
+            itemsToShow = allXsdXmlFiles.stream()
+                    .filter(name -> name.toLowerCase().contains(filterText.toLowerCase()))
+                    .toList();
+        }
+
+        if (itemsToShow.isEmpty()) {
+            listBox.setVisible(false);
+            divCenterSpanNotSearch.setVisible(true);
+            this.currentVisibleItems = new ArrayList<>();
+        } else {
+            listBox.setVisible(true);
+            divCenterSpanNotSearch.setVisible(false);
+            if(!filterBySize) {
+                this.sortAndSetItems(itemsToShow);
+            } else {
+                listBox.setItems(itemsToShow);
+                listBox.setValue(currentSelection);
+            }
+        }
     }
 
     private void sortAndSetItems(List<String> items) {
@@ -273,27 +310,6 @@ public class SearchDialog extends Dialog {
                 .filter(sorted::contains)
                 .collect(Collectors.toSet());
         listBox.setValue(toSelect);
-    }
-
-    private void filterList(String filterText) {
-        List<String> itemsToShow;
-        if (filterText == null || filterText.isEmpty()) {
-            itemsToShow = new ArrayList<>(allXsdXmlFiles);
-        } else {
-            itemsToShow = allXsdXmlFiles.stream()
-                    .filter(name -> name.toLowerCase().contains(filterText.toLowerCase()))
-                    .toList();
-        }
-
-        if (itemsToShow.isEmpty()) {
-            listBox.setVisible(false);
-            divCenterSpanNotSearch.setVisible(true);
-            this.currentVisibleItems = new ArrayList<>();
-        } else {
-            listBox.setVisible(true);
-            divCenterSpanNotSearch.setVisible(false);
-            sortAndSetItems(itemsToShow);
-        }
     }
 
     private void updateCounters() {
@@ -325,7 +341,7 @@ public class SearchDialog extends Dialog {
         return hrLine;
     }
 
-    private void configureBadgeButton(com.vaadin.flow.component.html.Span span) {
+    private void configureBadgeSpan(com.vaadin.flow.component.html.Span span) {
         span.getElement().getThemeList().add(BADGE_PILL + " " + THEME_INACTIVE);
         span.getStyle().setCursor(CURSOR_POINTER);
         this.removeUserSelectInSpan(span);
