@@ -234,10 +234,9 @@ public class Input extends Layout implements BeforeEnterObserver {
         final MenuBar menuBarGridOptions = new MenuBar();
         menuBarGridOptions.addClassName("fixed-menu");
         var tooltip = Tooltip.forComponent(buttonClearAll);
-        tooltip.setPosition(Tooltip.TooltipPosition.START_TOP);
+        tooltip.setPosition(Tooltip.TooltipPosition.TOP);
         tooltip.setText("Options");
-        menuBarGridOptions.setThemeName("tertiary-inline contrast");
-        menuBarGridOptions.addThemeVariants(MenuBarVariant.LUMO_SMALL);
+        menuBarGridOptions.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE, MenuBarVariant.LUMO_CONTRAST);
 
         final MenuItem itemEllipsis = menuBarGridOptions.addItem("");
         itemEllipsis.add(buttonClearAll);
@@ -383,11 +382,14 @@ public class Input extends Layout implements BeforeEnterObserver {
                         ui.access(() -> {
                             if (!word.isEmpty()) {
                                 this.buildErrorSpanAndUpdate(word);
-                                this.anchorDownloadErrors.setEnabled(!allErrorsList.isEmpty());
                             }
                         });
                     });
                 });
+    }
+
+    private void enableDownloadErrorsInOptions() {
+        this.anchorDownloadErrors.setEnabled(!allErrorsList.isEmpty());
     }
 
     private void onError(Throwable onError) {
@@ -398,6 +400,7 @@ public class Input extends Layout implements BeforeEnterObserver {
             this.spanWordError = this.buildErrorSpan();
             verticalLayoutArea.add(this.spanWordError);
             this.spanWordError.getElement().executeJs(JS_COMMAND, errorWord);
+            this.enableDownloadErrorsInOptions();
         });
     }
 
@@ -410,6 +413,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         }
         this.allErrorsList.add(word);
         this.spanWordError.getElement().executeJs(JS_COMMAND, word);
+        this.enableDownloadErrorsInOptions();
     }
 
     private Span buildErrorSpan() {
@@ -452,7 +456,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         if (matcher.find()) {
             return matcher.group(1);
         }
-        return StringUtils.EMPTY;
+        return "0";
     }
 
     private void processFile(final UploadFileHandler.FileDetails metadata, byte[] readedBytesFromFile, boolean isCompressed,
