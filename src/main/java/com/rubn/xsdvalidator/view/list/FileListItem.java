@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.view.list;
 
+import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
 import com.rubn.xsdvalidator.util.Layout;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorFileUtils;
@@ -14,12 +15,15 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
-import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.icon.AbstractIcon;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.DownloadResponse;
+import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Background;
@@ -28,7 +32,11 @@ import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.NonNull;
+import org.springframework.http.MediaType;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -51,19 +59,22 @@ public class FileListItem extends ListItem {
     @Getter
     private final String fileName;
 
+    private final Map<String, byte[]> mapPrefixFileNameAndContent;
+
     public FileListItem(String prefixFileName, long contentLength,
                         BiConsumer<FileListItem, Boolean> onSelectionListener,
                         final Map<String, byte[]> mapPrefixFileNameAndContent,
                         SearchDialog searchPopover) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
+        this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
 
         this.checkbox.addValueChangeListener(event -> {
             //Important! do not use event.isFromClient() in this condition
             if (event.getValue() != null) {
                 onSelectionListener.accept(this, event.getValue());
             }
-            if(event.getValue()) {
+            if (event.getValue()) {
                 getStyle().setBoxShadow(VAR_CUSTOM_BOX_SHADOW);
             } else {
                 getStyle().setBoxShadow("unset");
@@ -115,7 +126,7 @@ public class FileListItem extends ListItem {
             if (eventClick.isFromClient()) {
                 this.checkbox.setValue(!this.checkbox.getValue());
             }
-            if(this.checkbox.getValue()) {
+            if (this.checkbox.getValue()) {
                 getStyle().setBoxShadow(VAR_CUSTOM_BOX_SHADOW);
             } else {
                 getStyle().setBoxShadow("unset");
@@ -152,16 +163,58 @@ public class FileListItem extends ListItem {
         return this.checkbox.getValue();
     }
 
-
-    public MenuItem buildContextMenuItem(FileListItem fileListItem) {
+    public ContextMenu buildContextMenuItem(FileListItem fileListItem) {
         ContextMenu contextMenu = this.buildContextMenu(fileListItem);
-        contextMenu.addItem(this.createRowItemWithIcon("Edit", VaadinIcon.PENCIL.create(), "15px"),
+        final Anchor anchorDownloadErrors = new Anchor();
+        anchorDownloadErrors.addClassName("anchor-downloader");
+        //Download this current file
+        anchorDownloadErrors.setHref(this.buildDownloadHandler());
+
+        final HorizontalLayout rowDownload = this.buildRowItemWithIcon("Download file", VaadinIcon.DOWNLOAD.create(), "15px");
+        anchorDownloadErrors.addComponentAsFirst(rowDownload);
+        contextMenu.addItem(anchorDownloadErrors).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+
+        contextMenu.addItem(this.buildRowItemWithIcon("Edit", VaadinIcon.PENCIL.create(), "15px"),
                 event -> event.getSource().getUI().ifPresent(ui -> simpleCodeEditorDialog.showXmlCode())
         ).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
+
         contextMenu.addSeparator();
-        contextMenu.addItem(this.createRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px")
+
+        contextMenu.addItem(this.buildRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px")
         ).addClassNames(CONTEXT_MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
-        return contextMenu.getItems().get(1);
+        return contextMenu;
+    }
+
+    private @NonNull InputStreamDownloadHandler buildDownloadHandler() {
+        return DownloadHandler.fromInputStream((event) -> {
+            try {
+                String errors = new String(this.mapPrefixFileNameAndContent.get(this.fileName));
+//                log.info("Errors menu item: {}", errors);
+                byte[] byteArray = errors.getBytes(StandardCharsets.UTF_8);
+                String fileNameError = System.currentTimeMillis() + "-" + this.fileName;
+                event.getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileNameError + "\"");
+                return new DownloadResponse(
+                        new ByteArrayInputStream(byteArray),
+                        fileNameError,
+                        MediaType.TEXT_PLAIN_VALUE,
+                        byteArray.length
+                );
+            } catch (Exception e) {
+                log.error("Error downloading file: ", e);
+                ConfirmDialogBuilder.showWarning("Error downloading file: " + fileName);
+                return DownloadResponse.error(500);
+            }
+        });
+    }
+
+    private HorizontalLayout buildRowItemWithIcon(final String titleForSpan, AbstractIcon<?> icon, String iconSizeInPx) {
+        final com.vaadin.flow.component.html.Span span = new com.vaadin.flow.component.html.Span(titleForSpan);
+        icon.setSize(iconSizeInPx);
+        final HorizontalLayout row = new HorizontalLayout(icon, span);
+        row.setId("row-with-icon");
+        row.setSpacing(false);
+        row.addClassNames(LumoUtility.Gap.SMALL, LumoUtility.FontSize.SMALL);
+        return row;
     }
 
     private ContextMenu buildContextMenu(Component target) {
@@ -170,22 +223,10 @@ public class FileListItem extends ListItem {
         return contextMenu;
     }
 
-    private HorizontalLayout createRowItemWithIcon(final String titleForSpan, AbstractIcon<?> icon, String iconSizeInPx) {
-        final HorizontalLayout row = new HorizontalLayout();
-        row.setId("row-with-icon");
-        row.setSpacing(false);
-        row.addClassNames(LumoUtility.Gap.SMALL);
-        final com.vaadin.flow.component.html.Span span = new com.vaadin.flow.component.html.Span(titleForSpan);
-        icon.setSize(iconSizeInPx);
-        row.add(icon, span);
-        row.addClassName(LumoUtility.FontSize.SMALL);
-        return row;
-    }
-
     /**
      * View the error directly in the editor
      *
-     * @param line with error
+     * @param line        with error
      * @param xmlFileName with error
      */
     public void searchForTextLineInTheEditor(String line, String xmlFileName) {

@@ -320,9 +320,6 @@ public class Input extends Layout implements BeforeEnterObserver {
                 // Another improvement place for UploadFileHandler here, would be great to
                 // have reference for component/ui in handler...
                 access(() -> {
-//                        Notification.show("File not supported! " + metadata.fileName(),
-//                                        2000, Notification.Position.MIDDLE)
-//                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     ConfirmDialogBuilder.showWarning("File not supported! " + metadata.fileName());
                     uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
                     this.progressBarFileListItem.setVisible(false);
@@ -467,8 +464,12 @@ public class Input extends Layout implements BeforeEnterObserver {
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
 
         this.fileListItem = this.buildFileListItem(fileName, contentLength);
-        fileListItem.buildContextMenuItem(fileListItem)
+        final ContextMenu contextMenu = fileListItem.buildContextMenuItem(fileListItem);
+        // Delete option
+        contextMenu.getItems().get(2)
                 .addClickListener(event -> this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem));
+
+        // lumo cross button delete option
         fileListItem.getButtonClose().addClickListener(event -> this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem));
         customList.add(fileListItem);
 
@@ -556,14 +557,12 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private HorizontalLayout buildRowItemWithIcon(final String titleForSpan, AbstractIcon<?> icon, String iconSizeInPx) {
-        final HorizontalLayout row = new HorizontalLayout();
+        final com.vaadin.flow.component.html.Span span = new com.vaadin.flow.component.html.Span(titleForSpan);
+        final HorizontalLayout row = new HorizontalLayout(icon, span);
         row.setId("row-with-icon");
         row.setSpacing(false);
-        row.addClassNames(LumoUtility.Gap.SMALL);
-        final com.vaadin.flow.component.html.Span span = new com.vaadin.flow.component.html.Span(titleForSpan);
         icon.setSize(iconSizeInPx);
-        row.add(icon, span);
-        row.addClassName(LumoUtility.FontSize.SMALL);
+        row.addClassNames(LumoUtility.Gap.SMALL, LumoUtility.FontSize.SMALL);
         return row;
     }
 
