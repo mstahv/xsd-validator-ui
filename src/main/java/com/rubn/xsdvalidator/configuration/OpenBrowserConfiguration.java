@@ -30,7 +30,7 @@ public class OpenBrowserConfiguration {
 
     @EventListener(ApplicationReadyEvent.class)
     public void openBrowser() {
-        if (browserAutoOpenBrowser) {
+        if (!browserAutoOpenBrowser) {
             return;
         }
         String port = environment.getProperty("server.port");
