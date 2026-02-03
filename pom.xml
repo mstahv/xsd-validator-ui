@@ -4,7 +4,7 @@
     <!-- Project from https://start.vaadin.com/1f51f6f0-718c-49b1-b504-75f5c5037e28 -->
     <groupId>com.rubn</groupId>
     <artifactId>xsd-validator-ui</artifactId>
-    <version>1.0.42-SNAPSHOT</version>
+    <version>1.0.43-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <properties>
@@ -123,6 +123,13 @@
             <groupId>org.tukaani</groupId>
             <artifactId>xz</artifactId>
             <version>1.11</version>
+        </dependency>
+
+        <!-- https://github.com/javadev/underscore-java -->
+        <dependency>
+            <groupId>com.github.javadev</groupId>
+            <artifactId>underscore</artifactId>
+            <version>1.119</version>
         </dependency>
 
     </dependencies>

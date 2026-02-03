@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.view;
 
+import com.github.underscore.U;
 import com.rubn.xsdvalidator.util.ConfirmDialogBuilder;
 import com.rubn.xsdvalidator.util.SvgFactory;
 import com.rubn.xsdvalidator.util.XsdValidatorConstants;
@@ -59,7 +60,7 @@ public class SimpleCodeEditorDialog extends Dialog {
         this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
         this.searchPopover = searchPopover;
         this.sizeSpan = sizeSpan;
-        
+
         this.buildContentDialog();
     }
 
@@ -74,6 +75,7 @@ public class SimpleCodeEditorDialog extends Dialog {
         final Span spanFileNameTitle = new Span(fileName);
         spanFileNameTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD);
         final SvgIcon copyButtonIcon = SvgFactory.createCopyButtonFromSvg();
+        copyButtonIcon.setSize("30px");
         final Button copyButton = new Button(copyButtonIcon);
         copyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
         copyButton.addClickListener(event -> {
@@ -97,7 +99,11 @@ public class SimpleCodeEditorDialog extends Dialog {
 
         Icon iconTheme = this.buildIconTheme();
         SvgIcon iconWordWrap = this.buildIconWordWrap();
-        super.getHeader().add(spanFileNameTitle, copyButton, iconTheme, iconWordWrap, this.progressBar, closeButton);
+        SvgIcon iconFormatTrigger = this.buildIconFormatTrigger();
+
+        super.getHeader().add(spanFileNameTitle, copyButton, iconTheme, iconWordWrap,
+                iconFormatTrigger,
+                this.progressBar, closeButton);
 
         simpleCodeEditor.addValueChangeListener(event -> {
             String newContentStr = simpleCodeEditor.getContent();
@@ -173,7 +179,6 @@ public class SimpleCodeEditorDialog extends Dialog {
     private Icon buildIconTheme() {
         final Icon iconTheme = VaadinIcon.ADJUST.create();
         Tooltip.forComponent(iconTheme)
-                .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
                 .withText("dark - ligth");
         iconTheme.getStyle().setCursor(CURSOR_POINTER);
         iconTheme.addClassName(LumoUtility.FontSize.SMALL);
@@ -196,10 +201,22 @@ public class SimpleCodeEditorDialog extends Dialog {
     private SvgIcon buildIconWordWrap() {
         final SvgIcon iconTheme = SvgFactory.createIconFromSvg("word-wrap.svg", "25px", null);
         Tooltip.forComponent(iconTheme)
-                .withPosition(Tooltip.TooltipPosition.BOTTOM_END)
                 .withText("word wrap");
         iconTheme.getStyle().setCursor(CURSOR_POINTER);
         iconTheme.addClickListener(event -> simpleCodeEditor.setWordWrap(!simpleCodeEditor.getWordWrap()));
+        return iconTheme;
+    }
+
+    private SvgIcon buildIconFormatTrigger() {
+        final SvgIcon iconTheme = SvgFactory.createIconFromSvg("format-code.svg", "25px", null);
+        Tooltip.forComponent(iconTheme)
+                .withText("Format");
+        iconTheme.getStyle().setCursor(CURSOR_POINTER);
+        iconTheme.addClickListener(event -> {
+            String sfileName = new String(this.mapPrefixFileNameAndContent.get(fileName));
+            String formatedXml = U.formatXml(sfileName);
+            this.simpleCodeEditor.setContent(formatedXml);
+        });
         return iconTheme;
     }
 

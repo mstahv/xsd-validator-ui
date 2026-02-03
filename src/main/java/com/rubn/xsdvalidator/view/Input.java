@@ -577,7 +577,9 @@ public class Input extends Layout implements BeforeEnterObserver {
     private void access(Command command) {
         super.getUI().ifPresent(ui -> {
             try {
-                ui.access(command);
+                if(isAttached()) {
+                    ui.access(command);
+                }
             } catch (UIDetachedException ex) {
             }
         });
