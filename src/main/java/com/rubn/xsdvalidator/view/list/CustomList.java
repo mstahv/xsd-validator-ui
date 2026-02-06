@@ -7,7 +7,7 @@ import com.vaadin.flow.component.HasTheme;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CLICK_LIKE_HORIZONTAL_SCROLL;
 
-public class CustomList extends com.vaadin.flow.component.html.UnorderedList implements HasTheme {
+public class CustomList extends com.vaadin.flow.component.html.ListItem implements HasTheme {
 
     // Style
     private Color.Background background;

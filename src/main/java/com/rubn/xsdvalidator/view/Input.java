@@ -33,6 +33,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.internal.JacksonCodec;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.server.Command;
@@ -47,6 +48,7 @@ import org.vaadin.firitin.components.upload.UploadFileHandler;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import tools.jackson.databind.JsonNode;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -58,6 +60,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -107,7 +110,6 @@ public class Input extends Layout implements BeforeEnterObserver {
     @Getter
     private SearchDialog searchDialog;
     private Disposable disposableStreaming;
-    private FileListItem fileListItem;
 
     public Input(final ValidationXsdSchemaService validationXsdSchemaService,
                  final DecompressionService decompressionService,
@@ -315,11 +317,11 @@ public class Input extends Layout implements BeforeEnterObserver {
      */
     private UploadFileHandler buildUploadFileHandler(final Button uploadButtonAttachment) {
         return new UploadFileHandler((InputStream inputStream, UploadFileHandler.FileDetails metadata) -> {
-            this.access(() -> this.progressBarFileListItem.setVisible(true));
+            this.accessUI(() -> this.progressBarFileListItem.setVisible(true));
             if (XsdValidatorFileUtils.isNotSupportedExtension(metadata.fileName())) {
                 // Another improvement place for UploadFileHandler here, would be great to
                 // have reference for component/ui in handler...
-                access(() -> {
+                accessUI(() -> {
                     ConfirmDialogBuilder.showWarning("File not supported! " + metadata.fileName());
                     uploadFileHandler.clearFiles(); // manually clear files after error as UFH doesn't seem to do it
                     this.progressBarFileListItem.setVisible(false);
@@ -365,14 +367,14 @@ public class Input extends Layout implements BeforeEnterObserver {
 
         this.disposableStreaming = this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema, mapPrefixFileNameAndContent)
                 .switchIfEmpty(Mono.defer(() -> {
-                    this.access(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
+                    this.accessUI(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
                     return Mono.empty();
                 }))
                 .doOnError(this::onError)
                 .delayElements(Duration.ofMillis(50), Schedulers.boundedElastic())
                 .doOnTerminate(() -> {
                     log.info("Terminated!");
-                    this.access(() -> validateButton.setEnabled(true));
+                    this.accessUI(() -> validateButton.setEnabled(true));
                 })
                 .subscribe(word -> {
                     super.getUI().ifPresent(ui -> {
@@ -390,7 +392,7 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private void onError(Throwable onError) {
-        this.access(() -> {
+        this.accessUI(() -> {
             String errorWord = onError.getLocalizedMessage();
             this.allErrorsList.add(StringUtils.LF);
             this.allErrorsList.add(errorWord);
@@ -432,10 +434,28 @@ public class Input extends Layout implements BeforeEnterObserver {
         contextMenuSpan.addItem(this.buildRowItemWithIcon("Search error", VaadinIcon.SEARCH_PLUS.create(),
                 ICON_SIZE_IN_PX), event -> {
             span.getElement().executeJs(RETURN_TEXT_ERROR)
-                    .then(String.class, errorText -> {
-                        final String lineError = this.extractLineNumber(errorText);
-                        fileListItem.searchForTextLineInTheEditor(lineError, this.selectedXmlFile);
-                    });
+                    .toCompletableFuture()
+                    .whenCompleteAsync((JsonNode jsonNode, Throwable throwable) -> {
+                        if (Objects.isNull(throwable)) {
+                            this.accessUI(() -> {
+                                final String errorText = JacksonCodec.decodeAs(jsonNode, String.class);
+                                final String lineError = this.extractLineNumber(errorText);
+                                this.customList.getChildren()
+                                        .filter(component -> component instanceof FileListItem)
+                                        .map(component -> (FileListItem) component)
+                                        .filter(fileListItem -> fileListItem.getFileName().equals(this.selectedXmlFile))
+                                        .findFirst()
+                                        .ifPresent(fileListItem -> {
+                                            fileListItem.searchForTextLineInTheEditor(lineError, this.selectedXmlFile);
+                                            log.info("Editor is opened!");
+                                        });
+                            });
+                        } else {
+                            this.accessUI(() -> {
+                                ConfirmDialogBuilder.showWarning("Error al intentar editar fichero: " + this.selectedXmlFile);
+                            });
+                        }
+                    }, Executors.newCachedThreadPool());
         }).addClassName(CONTEXT_MENU_ITEM_NO_CHECKMARK);
 
         contextMenuSpan.addItem(this.buildRowItemWithIcon("Clear errors", VaadinIcon.TRASH.create(), ICON_SIZE_IN_PX), event -> {
@@ -463,30 +483,31 @@ public class Input extends Layout implements BeforeEnterObserver {
         long contentLength = isCompressed ? decompressedFile.content().length : metadata.contentLenght();
         mapPrefixFileNameAndContent.put(fileName, readedBytesFromFile);
 
-        this.fileListItem = this.buildFileListItem(fileName, contentLength);
+        final FileListItem fileListItem = this.buildFileListItem(fileName, contentLength);
         final ContextMenu contextMenu = fileListItem.buildContextMenuItem(fileListItem);
         // Delete option
         contextMenu.getItems().get(2)
-                .addClickListener(event -> this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem));
+                .addClickListener(event -> this.showConfirmDialog(event, fileName, fileListItem));
 
         // lumo cross button delete option
-        fileListItem.getButtonClose().addClickListener(event -> this.showConfirmDialog(readedBytesFromFile, event, fileName, fileListItem));
+        fileListItem.getButtonClose().addClickListener(event -> this.showConfirmDialog(event, fileName, fileListItem));
         customList.add(fileListItem);
 
     }
 
-    private void showConfirmDialog(byte[] readedBytesFromFile, ClickEvent<?> event, String fileName, FileListItem fileListItem) {
+    private void showConfirmDialog(ClickEvent<?> event, String fileName, FileListItem fileListItem) {
         event.getSource().getUI().ifPresent(ui -> {
             ConfirmDialogBuilder.showConfirmInformation("Do you want to delete: " + fileName, ui)
                     .addConfirmListener(confirm -> {
-                        this.deleteFileListItem(readedBytesFromFile, fileListItem, fileName);
+                        this.deleteFileListItem(fileListItem, fileName);
                     });
         });
     }
 
-    private void deleteFileListItem(byte[] readedBytesFromFile, FileListItem fileListItem, String fileName) {
+    private void deleteFileListItem(FileListItem fileListItem, String fileName) {
         customList.remove(fileListItem);
-        mapPrefixFileNameAndContent.remove(fileName, readedBytesFromFile);
+        mapPrefixFileNameAndContent.remove(fileName);
+        log.info("remove file {}", fileName);
         // Si borramos el que estaba seleccionado, limpiar la variable
         if (fileName.equals(selectedMainXsd)) {
             selectedMainXsd = StringUtils.EMPTY;
@@ -574,10 +595,10 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .trim();
     }
 
-    private void access(Command command) {
+    private void accessUI(Command command) {
         super.getUI().ifPresent(ui -> {
             try {
-                if(isAttached()) {
+                if (isAttached()) {
                     ui.access(command);
                 }
             } catch (UIDetachedException ex) {

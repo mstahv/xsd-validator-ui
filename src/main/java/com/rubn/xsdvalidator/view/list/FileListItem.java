@@ -64,7 +64,7 @@ public class FileListItem extends ListItem {
     public FileListItem(String prefixFileName, long contentLength,
                         BiConsumer<FileListItem, Boolean> onSelectionListener,
                         final Map<String, byte[]> mapPrefixFileNameAndContent,
-                        SearchDialog searchPopover) {
+                        SearchDialog searchDialog) {
         this.checkbox = new Checkbox();
         this.fileName = prefixFileName;
         this.mapPrefixFileNameAndContent = mapPrefixFileNameAndContent;
@@ -118,7 +118,7 @@ public class FileListItem extends ListItem {
 
         setGap(Layout.Gap.SMALL);
 
-        this.simpleCodeEditorDialog = new SimpleCodeEditorDialog(fileName, mapPrefixFileNameAndContent, searchPopover,
+        this.simpleCodeEditorDialog = new SimpleCodeEditorDialog(fileName, mapPrefixFileNameAndContent, searchDialog,
                 sizeSpan);
         this.simpleCodeEditor = simpleCodeEditorDialog.getSimpleCodeEditor();
 
@@ -182,6 +182,7 @@ public class FileListItem extends ListItem {
 
         contextMenu.addItem(this.buildRowItemWithIcon("Delete", VaadinIcon.TRASH.create(), "15px")
         ).addClassNames(CONTEXT_MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
+
         return contextMenu;
     }
 
