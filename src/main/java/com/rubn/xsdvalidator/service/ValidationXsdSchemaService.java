@@ -27,13 +27,13 @@ import java.util.stream.Stream;
 @Service
 public class ValidationXsdSchemaService {
 
-    public Flux<String> validateXmlInputWithXsdSchema(final byte[] inputXml, final byte[] inputXsdSchema,
+    public Flux<List<String>> validateXmlInputWithXsdSchema(final byte[] inputXml, final byte[] inputXsdSchema,
                                                       final Map<String, byte[]> mapPrefixFileNameAndContent) {
         return this.loadSchema(inputXsdSchema, mapPrefixFileNameAndContent)
                 .map(Schema::newValidator)
                 .flatMap(this::buildXmlValidatorErrorHandler)
                 .flatMap(tuple -> this.buildValidator(tuple, inputXml))
-                .flatMapMany(Flux::fromIterable);
+                .flatMapMany(Mono::just);
     }
 
     private Mono<Schema> loadSchema(final byte[] inputXsdSchema, final Map<String, byte[]> mapPrefixFileNameAndContent) {
@@ -57,13 +57,13 @@ public class ValidationXsdSchemaService {
         final XmlValidationErrorHandler xmlValidationErrorHandler = tuple.getT2();
         try (var bufferedInputStream = new BufferedInputStream(new ByteArrayInputStream(inputXml))) {
             validator.validate(new StreamSource(bufferedInputStream));
-            return Mono.just(this.detectWords(xmlValidationErrorHandler.getExceptions()));
+            return Mono.just(xmlValidationErrorHandler.getExceptions());
         } catch (Exception e) {
             return Mono.error(e);
         }
     }
 
-    private List<String> detectWords(List<String> exceptions) {
+    public List<String> detectWords(List<String> exceptions) {
         return exceptions
                 .stream()
                 .flatMap(item -> Stream.of(item.split(StringUtils.SPACE)))

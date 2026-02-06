@@ -72,7 +72,7 @@ class InputTest {
     @DisplayName("Using xml and xsd inputs")
     public void validateFlow_success() throws Exception {
 
-        when(validationService.validateXmlInputWithXsdSchema(any(), any(), any())).thenReturn(Flux.just("Validation successful!!!"));
+        when(validationService.validateXmlInputWithXsdSchema(any(), any(), any())).thenReturn(Flux.just(List.of("Validation successful!!!")));
 
         injectFile("main.xsd", "<schema>...</schema>".getBytes(StandardCharsets.UTF_8));
         injectFile("data.xml", "<data>...</data>".getBytes(StandardCharsets.UTF_8));

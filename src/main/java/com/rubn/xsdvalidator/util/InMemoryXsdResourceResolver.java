@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  *
- * Necessary to resolve the necessary schemes; in this case, everything will be in memory.
+ * Resolve the necessary schemes; in this case, everything will be in memory.
  *
  * @author rubn
  */
@@ -28,7 +28,7 @@ public class InMemoryXsdResourceResolver implements LSResourceResolver {
     public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
         try {
             final byte[] fileBytes = mapPrefixFileNameAndContent.get(this.cleanFileName(systemId));
-            // Verificar si el archivo XSD existe en el classpath
+            // Check if the XSD file exists in the classpath
             if (fileBytes == null) {
                 throw new IOException("The imported schema was not found: " + systemId);
             }

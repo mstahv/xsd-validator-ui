@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <m:SpaceOrder xmlns:m="http://www.example.org/main"
-              xmlns:prod="http://www.example.org/product">
+>
 
     <m:OrderId>ORD-2025-GAL-001</m:OrderId>
-    <m:CustomerEmail>captain@example.org</m:CustomerEmail>
+    <m:CustomerEmail>captainexample.org</m:CustomerEmail>
     <m:OrderDate>2025-05-20</m:OrderDate>
 
     <m:Items>
@@ -16,7 +16,7 @@
         <m:Item>
             <prod:Sku>PLAS-CELL-X</prod:Sku>
             <prod:Name>Plasma Energy Cell</prod:Name>
-            <prod:Price>45.50</prod:Price>
+            <prod:Price>-10.00</prod:Price>
             <prod:Quantity>100</prod:Quantity>
         </m:Item>
     </m:Items>

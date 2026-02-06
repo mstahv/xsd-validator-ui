@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <m:SpaceOrder xmlns:m="http://www.example.org/main"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xmlns:dt="http://www.example.org/datatypes">
+              xmlns:prod="http://www.example.org/product">
 
     <m:OrderId>ORD-2025-GAL-001</m:OrderId>
     <m:CustomerEmail>captainexample.org</m:CustomerEmail>
