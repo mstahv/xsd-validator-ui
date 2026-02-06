@@ -1,5 +1,6 @@
 package com.rubn.xsdvalidator.service;
 
+import com.rubn.xsdvalidator.util.InMemoryXsdResourceResolver;
 import com.rubn.xsdvalidator.util.XmlValidationErrorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +17,7 @@ import javax.xml.validation.Validator;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -25,18 +27,19 @@ import java.util.stream.Stream;
 @Service
 public class ValidationXsdSchemaService {
 
-    public Flux<String> validateXmlInputWithXsdSchema(final byte[] inputXml, final byte[] inputXsdSchema) {
-        return this.loadSchema(inputXsdSchema)
+    public Flux<String> validateXmlInputWithXsdSchema(final byte[] inputXml, final byte[] inputXsdSchema,
+                                                      final Map<String, byte[]> mapPrefixFileNameAndContent) {
+        return this.loadSchema(inputXsdSchema, mapPrefixFileNameAndContent)
                 .map(Schema::newValidator)
                 .flatMap(this::buildXmlValidatorErrorHandler)
                 .flatMap(tuple -> this.buildValidator(tuple, inputXml))
                 .flatMapMany(Flux::fromIterable);
     }
 
-    private Mono<Schema> loadSchema(final byte[] inputXsdSchema) {
+    private Mono<Schema> loadSchema(final byte[] inputXsdSchema, final Map<String, byte[]> mapPrefixFileNameAndContent) {
         final SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try (var bufferedInputStream = new BufferedInputStream(new ByteArrayInputStream(inputXsdSchema))) {
-            //schemaFactory.setResourceResolver(new XsdResourceResolver());
+            schemaFactory.setResourceResolver(new InMemoryXsdResourceResolver(mapPrefixFileNameAndContent));
             return Mono.just(schemaFactory.newSchema(new StreamSource(bufferedInputStream)));
         } catch (Exception ex) {
             return Mono.error(ex);

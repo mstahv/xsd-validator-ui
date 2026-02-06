@@ -363,7 +363,7 @@ public class Input extends Layout implements BeforeEnterObserver {
         byte[] inputXml = this.mapPrefixFileNameAndContent.get(this.selectedXmlFile);
         byte[] inputXsdSchema = this.mapPrefixFileNameAndContent.get(this.selectedMainXsd);
 
-        this.disposableStreaming = this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema)
+        this.disposableStreaming = this.validationXsdSchemaService.validateXmlInputWithXsdSchema(inputXml, inputXsdSchema, mapPrefixFileNameAndContent)
                 .switchIfEmpty(Mono.defer(() -> {
                     this.access(() -> ConfirmDialogBuilder.showInformation("Validation successful!!!"));
                     return Mono.empty();

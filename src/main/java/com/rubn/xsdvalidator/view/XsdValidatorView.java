@@ -24,11 +24,13 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.COPY_TO_CLIPBOARD;
 import static com.rubn.xsdvalidator.util.XsdValidatorConstants.CURSOR_POINTER;
 
+@Log4j2
 @UIScope
 @SpringComponent
 @Route("")
