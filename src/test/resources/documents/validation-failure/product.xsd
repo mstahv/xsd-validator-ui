@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.example.org/product"
+           xmlns:p="http://www.example.org/product"
+           xmlns:dt="http://www.example.org/datatypes"
+           elementFormDefault="qualified">
+
+    <xs:import namespace="http://www.example.org/datatypes" schemaLocation="datatypes.xsd"/>
+
+    <xs:complexType name="ProductItem">
+        <xs:sequence>
+            <xs:element name="Sku" type="dt:String50"/>
+            <xs:element name="Name" type="xs:string"/>
+            <xs:element name="Price" type="dt:PriceType"/>
+            <xs:element name="Quantity" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

@@ -4,7 +4,7 @@
     <!-- Project from https://start.vaadin.com/1f51f6f0-718c-49b1-b504-75f5c5037e28 -->
     <groupId>com.rubn</groupId>
     <artifactId>xsd-validator-ui</artifactId>
-    <version>1.0.43-SNAPSHOT</version>
+    <version>1.0.44-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <properties>
@@ -130,6 +130,14 @@
             <groupId>com.github.javadev</groupId>
             <artifactId>underscore</artifactId>
             <version>1.119</version>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.github.mvysny.kaributesting/karibu-testing-v24 -->
+        <dependency>
+            <groupId>com.github.mvysny.kaributesting</groupId>
+            <artifactId>karibu-testing-v24</artifactId>
+            <version>2.6.2</version>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>

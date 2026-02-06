@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<m:SpaceOrder xmlns:m="http://www.example.org/main"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns:dt="http://www.example.org/datatypes">
+
+    <m:OrderId>ORD-2025-GAL-001</m:OrderId>
+    <m:CustomerEmail>captainexample.org</m:CustomerEmail>
+    <m:OrderDate>2025-05-20</m:OrderDate>
+
+    <m:Items>
+        <m:Item>
+            <prod:Sku>ENG-V12-TURBO</prod:Sku>
+            <prod:Name>Hyperdrive Engine Class 5</prod:Name>
+            <prod:Price>15000.00</prod:Price>
+            <prod:Quantity>1</prod:Quantity>
+        </m:Item>
+        <m:Item>
+            <prod:Sku>PLAS-CELL-X</prod:Sku>
+            <prod:Name>Plasma Energy Cell</prod:Name>
+            <prod:Price>-10.00</prod:Price>
+            <prod:Quantity>100</prod:Quantity>
+        </m:Item>
+    </m:Items>
+
+</m:SpaceOrder>

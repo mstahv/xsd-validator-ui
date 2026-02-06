@@ -229,19 +229,19 @@ public class Input extends Layout implements BeforeEnterObserver {
     }
 
     private MenuBar buildMenuBarOptions() {
-        final Button buttonClearAll = new Button(VaadinIcon.ELLIPSIS_V.create());
-        buttonClearAll.getStyle().setCursor(CURSOR_POINTER);
-        buttonClearAll.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+        final Button buttonOptions = new Button(VaadinIcon.ELLIPSIS_V.create());
+        buttonOptions.getStyle().setCursor(CURSOR_POINTER);
+        buttonOptions.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
 
         final MenuBar menuBarGridOptions = new MenuBar();
         menuBarGridOptions.addClassName("fixed-menu");
-        var tooltip = Tooltip.forComponent(buttonClearAll);
+        var tooltip = Tooltip.forComponent(buttonOptions);
         tooltip.setPosition(Tooltip.TooltipPosition.TOP);
         tooltip.setText("Options");
         menuBarGridOptions.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE, MenuBarVariant.LUMO_CONTRAST);
 
         final MenuItem itemEllipsis = menuBarGridOptions.addItem("");
-        itemEllipsis.add(buttonClearAll);
+        itemEllipsis.add(buttonOptions);
 
         this.anchorDownloadErrors.setClassName("anchor-downloader");
         this.anchorDownloadErrors.setHref(DownloadHandler.fromInputStream((event) -> {
@@ -289,16 +289,7 @@ public class Input extends Layout implements BeforeEnterObserver {
 
         itemEllipsis.getSubMenu().addItem(this.buildRowItemWithIcon("Clear files and text",
                 VaadinIcon.TRASH.create(), "18px"), event -> {
-            verticalLayoutArea.removeAll();
-            verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
-            customList.removeAll();
-            mapPrefixFileNameAndContent.clear();
-            allErrorsList.clear();
-            this.counterSpanId.set(0);
-            this.anchorDownloadErrors.setEnabled(false);
-            this.selectedMainXsd = StringUtils.EMPTY;
-            this.selectedXmlFile = StringUtils.EMPTY;
-            this.searchDialog.updateItems(this.getXsdXmlFiles());
+            this.clearAllData();
         }).addClassNames(MENU_ITEM_NO_CHECKMARK, DELETE_ITEM);
 
         itemEllipsis.getSubMenu()
@@ -306,6 +297,19 @@ public class Input extends Layout implements BeforeEnterObserver {
                 .forEach(item -> item.getStyle().setCursor(CURSOR_POINTER));
 
         return menuBarGridOptions;
+    }
+
+    public void clearAllData() {
+        verticalLayoutArea.removeAll();
+        verticalLayoutArea.getElement().executeJs(SCROLLBAR_CUSTOM_STYLE);
+        customList.removeAll();
+        mapPrefixFileNameAndContent.clear();
+        allErrorsList.clear();
+        this.counterSpanId.set(0);
+        this.anchorDownloadErrors.setEnabled(false);
+        this.selectedMainXsd = StringUtils.EMPTY;
+        this.selectedXmlFile = StringUtils.EMPTY;
+        this.searchDialog.updateItems(this.getXsdXmlFiles());
     }
 
     /**
